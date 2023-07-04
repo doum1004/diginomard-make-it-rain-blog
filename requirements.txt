@@ -1,0 +1,31 @@
+# get youtube clips
+yt-dlp
+SpeechRecognition
+opencv-python
+moviepy
+
+
+#ffmpeg
+# https://adamtheautomator.com/install-ffmpeg/
+# New-Item -Type Directory -Path C:\ffmpeg ; Set-Location C:\ffmpeg
+# curl.exe -L 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -o 'ffmpeg.zip'
+# Expand-Archive .\ffmpeg.zip -Force -Verbose
+# Move the executable (*.exe) files to the top folder
+# Get-ChildItem -Recurse `
+#     -Path .\ffmpeg\ -Filter *.exe |
+#     ForEach-Object {
+#         Move-Item $_ -Destination .\ -Verbose
+#     }
+# # Clean up
+# Remove-Item .\ffmpeg\ -Recurse
+# Remove-Item .\ffmpeg.zip
+# # List the directory contents
+# Get-ChildItem
+# # Prepend the FFmpeg folder path to the system path variable
+# [System.Environment]::SetEnvironmentVariable(
+#     "PATH",
+#     "C:\ffmpeg\;$([System.Environment]::GetEnvironmentVariable('PATH','MACHINE'))",
+#     "Machine"
+# )
+#$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
+#ffmpeg -version

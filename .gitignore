@@ -1,0 +1,4 @@
+__pycache__/
+
+# ignore all folder with name _ prefixed
+__*/
