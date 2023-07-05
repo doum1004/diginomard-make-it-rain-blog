@@ -6,7 +6,7 @@ import requests
 from utils import SaveUtils
 
 class YoutubeLoader:
-    saveUtils = SaveUtils('__output', addCurDir=True)
+    saveUtils = SaveUtils('__output/youtube')
     def __init__(self):
         pass
 
