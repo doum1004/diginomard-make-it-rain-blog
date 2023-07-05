@@ -1,9 +1,20 @@
-# get youtube clips
+## Common
+beautifulsoup4
+
+## Youtube
 yt-dlp
 SpeechRecognition
 opencv-python
 moviepy
 
+## AI ##
+openai
+PyKakao
+
+## google search
+pytrends
+## news
+feedparser
 
 #ffmpeg
 # https://adamtheautomator.com/install-ffmpeg/
