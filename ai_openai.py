@@ -3,7 +3,7 @@ import openai
 from numpy import maximum
 from utils import SaveUtils
 
-os.environ['OPENAI_API_KEY']='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'
+os.environ['KAKAO_API_KEY']="YOUR_KEY"
 
 class OpenAI:
     openai.api_key = os.getenv("OPENAI_API_KEY")
