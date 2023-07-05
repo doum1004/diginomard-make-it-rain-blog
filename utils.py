@@ -5,31 +5,52 @@ import json
 import datetime
 import os
 import urllib.request
+import re
+import requests
+import ssl
+import certifi
 from PIL import Image
 from io import BytesIO
 from pathlib import Path
+
+if not '_CLOUD_SETUP_' in os.environ:
+    os.environ['_CLOUD_SETUP_'] = '0'
+if not '_SAVE_GOOLECLOUD_' in os.environ:
+    os.environ['_SAVE_GOOLECLOUD_'] = '0'
+
+context = ssl.create_default_context(cafile=certifi.where())
 
 class Utils:
     def __init__(self):
         pass
 
-    def isJsonString(jsonString):
+    def readJsonFile(filePath):
         try:
-            json.loads(jsonString)
-        except ValueError as e:
+            with open(filePath, 'r') as file:
+                # Load the JSON data
+                return json.load(file)
+        except:
+            print('Failed')
+
+    def isJsonString(data):
+        if type(data) == dict or type(data) == list:
+            return True
+        try:
+            json.loads(data)
+        except:
             return False
         return True
        
-    def getDirs(baseDir, useGoogleCloud = False):
+    def getDirs(baseDir):
         dirs = [f'{baseDir}']
-        if useGoogleCloud:
+        if os.environ['_SAVE_GOOLECLOUD_']:
            dirs.append(os.path.join('/content/drive/MyDrive/diginormad', baseDir))
         for dir in dirs:
             Path(dir).mkdir(parents=True, exist_ok=True)
         return dirs
 
     def getCurrentTime():
-        return datetime.datetime.now().strftime("%y%d%m-%H%M%S")
+        return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
     
     def getUniqueFileNameUnderDirs(dirs, fileName, ext):
         i = 0
@@ -41,10 +62,61 @@ class Utils:
             while os.path.exists(filePath):
                 i += 1
                 filePath = f'{dir}/{fileName}_{Utils.getCurrentTime()}_{i}.{ext}'
-        return filePath
+        return fileName
+    
+class HTMLUtils:
+    def __init__(self):
+        pass
+    
+    def getHTML(url):
+        html = ''
+        try:
+            response = requests.get(url, timeout=0.5)
+            html = response.text
+        except:
+            html = ''
+
+        if html == '':
+            try:
+                response = urllib.request.urlopen(url, context=context)
+                html = response.read().decode('utf-8')
+            except:
+                html = ''
+        return html
+
+
+    def remove_html_tags(text):
+        filtered = re.sub('<.*?>', '', text) #regex
+        return re.sub(r'<script\b[^>]*>(.*?)</script>', '', filtered, flags=re.MULTILINE|re.DOTALL)
+
+    def cleanText(text):
+        content_black_list = ["Comprehensive up-to-date news coverage, aggregated from sources all over the world by Google News."]
+
+        text = HTMLUtils.remove_html_tags(text)
+        text = text.strip().replace("{", "").replace("}", "").replace("[", "").replace("]", "")
+        text = " ".join(text.split())
+        if text in content_black_list:
+            text = ""
+        return text
+
+    def getAllMetas(soup):
+        meta_tags = soup.find_all('meta')
+
+        meta_data = {}
+        for tag in meta_tags:
+            name = tag.get('name')
+            property = tag.get('property')
+            content = tag.get('content')
+            if name:
+                meta_data[name] = content
+            elif property:
+                meta_data[property] = content
+
+        return meta_data
+
 
 class ImageUtils:
-    def __init__(self, localSetting = False):
+    def __init__(self):
         pass
     
     def getImageFromBase64UsingCV(base64_string):
@@ -73,25 +145,27 @@ class ImageUtils:
 
 class SaveUtils:
     baseDir = ''
-    localSetting = False
-    def __init__(self, baseDir, localSetting = False):
+    def __init__(self, baseDir):
         self.baseDir = baseDir
-        self.localSetting = localSetting
 
+    def getBaseDir(self):
+        baseDir = self.baseDir
+        # check environ value
+        if os.environ['_CLOUD_SETUP_']:
+           baseDir = os.path.join(os.getcwd(), self.baseDir)
+        return baseDir
+    
     def saveData(self, fileName, data):
         if fileName == '' or data == '':
             return
         
-        baseDir = self.baseDir
-        if self.localSetting:
-           baseDir = os.path.join(os.getcwd(), self.baseDir)
-
         isJson = Utils.isJsonString(data)
         ext = 'txt'
         if isJson:
            ext = 'json'
 
-        dirs = Utils.getDirs(baseDir, not self.localSetting)
+        baseDir = self.getBaseDir()
+        dirs = Utils.getDirs(baseDir)
         fileName = Utils.getUniqueFileNameUnderDirs(dirs, fileName, ext)
 
         filePaths = []
@@ -109,11 +183,8 @@ class SaveUtils:
         if fileName == '' or url == '':
             return
         
-        baseDir = self.baseDir
-        if self.localSetting:
-           baseDir = os.path.join(os.getcwd(), self.baseDir)
-
-        dirs = Utils.getDirs(baseDir, not self.localSetting)
+        baseDir = self.getBaseDir()
+        dirs = Utils.getDirs(baseDir)
         fileName = Utils.getUniqueFileNameUnderDirs(dirs, fileName, 'jpg')
 
         filePaths = []
@@ -129,13 +200,11 @@ class SaveUtils:
         if fileName == '' or fileName == '':
             return
         
-        if self.localSetting:
-           baseDir = os.path.join(os.getcwd(), baseDir)
-
         image = ImageUtils.getImageFromBase64(base64Code)
 
-        dirs = Utils.getDirs(baseDir, not self.localSetting)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, baseDir, 'jpg')
+        baseDir = self.getBaseDir()
+        dirs = Utils.getDirs(baseDir)
+        fileName = Utils.getUniqueFileNameUnderDirs(dirs, fileName, 'jpg')
 
         filePaths = []
         for dir in dirs:
