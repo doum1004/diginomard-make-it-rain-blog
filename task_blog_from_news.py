@@ -6,13 +6,19 @@ def getNewsBlogPost():
     def getNewsBlogPrompts(newsData):
         #systemContent = f"I want you to act as a news reporter. You will utilize the following news article to provide valuable information:\n\n{newsData[:2500]}."
         systemContent = f"I want you to act as a news reporter. You will utilize the news article to provide valuable information."
-        userContent = "Summury Suggest title and subheaders. Put 5 hash tags on the bottom. Must write it in Markdown style and Korean."
+        userContent = "Summury Suggest title and subheaders. Put 5 hash tags on the bottom. Must write it in Markdown style and English."
         assistantContent = f"{newsData[:2500]}"
         return systemContent, userContent, assistantContent
 
-    def getBlogDetails(previousAnswer):
+    def getTranslatePrompts(previousAnswer):
         systemContent = f""
-        userContent = "Give more details"
+        userContent = "Translate to Korean"
+        assistantContent = f"{previousAnswer}"
+        return systemContent, userContent, assistantContent
+    
+    def getDetailsPrompts(previousAnswer):
+        systemContent = f""
+        userContent = "Give more detial"
         assistantContent = f"{previousAnswer}"
         return systemContent, userContent, assistantContent
 
@@ -22,21 +28,23 @@ def getNewsBlogPost():
         assistantContent = f"{q}"
         return systemContent, userContent, assistantContent
 
-    googleTrend = GoogleTrend(0)
-    trends, keywords = googleTrend.getTrendAndKeywords()
+    googleTrend = GoogleTrend(1)
+    trends = googleTrend.getTrends()
     print(trends)
-    #print(keywords)
 
-    news = News(0)
+    news = News(1)
     index = input('Give trend index : ')
     keyword = trends[int(index)]
     result_news = news.getAllNews(keyword)
 
     openai = OpenAI()
     prompts = getNewsBlogPrompts(result_news)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
+    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
     if len(result) < 400:
-        prompts = getBlogDetails(result)
-        result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
+        prompts = getDetailsPrompts(result)
+        result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+
+    prompts = getTranslatePrompts(result)
+    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
 
 getNewsBlogPost()

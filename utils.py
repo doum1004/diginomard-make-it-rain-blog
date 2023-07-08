@@ -9,6 +9,10 @@ import re
 import requests
 import ssl
 import certifi
+import fitz
+import docx
+import validators
+from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 from pathlib import Path
@@ -43,7 +47,7 @@ class Utils:
        
     def getDirs(baseDir):
         dirs = [f'{baseDir}']
-        if os.environ['_SAVE_GOOLECLOUD_']:
+        if '_SAVE_GOOLECLOUD_' in os.environ and os.environ['_SAVE_GOOLECLOUD_']:
            dirs.append(os.path.join('/content/drive/MyDrive/diginormad', baseDir))
         for dir in dirs:
             Path(dir).mkdir(parents=True, exist_ok=True)
@@ -53,16 +57,35 @@ class Utils:
         return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
     
     def getUniqueFileNameUnderDirs(dirs, fileName, ext):
+        def getFileName(fileName, i, ext):
+            return f'{Utils.getCurrentTime()}_{fileName}_{i}.{ext}'
+        
         i = 0
-        def getFileName():
-            return f'{fileName}_{Utils.getCurrentTime()}_{i}.{ext}'
-        fileName = getFileName()
+        newFileName = getFileName(fileName, i, ext)
         for dir in dirs:
-            filePath = os.path.join(dir, fileName)
+            filePath = os.path.join(dir, newFileName)
             while os.path.exists(filePath):
                 i += 1
-                filePath = f'{dir}/{fileName}_{Utils.getCurrentTime()}_{i}.{ext}'
-        return fileName
+                newFileName = getFileName(fileName, i, ext)
+                filePath = os.path.join(dir, newFileName)
+        return newFileName
+    
+    def splitText(text, max_tokens = 1000):
+        tokens = text.split()
+        split_texts = []
+        current_text = ""
+        for token in tokens:
+            token = token.strip()
+            if token == '' or token is None:
+                continue
+            if len(current_text) + len(token) < max_tokens:
+                current_text += token + " "
+            else:
+                split_texts.append(current_text.strip())
+                current_text = token + " "
+        if current_text:
+            split_texts.append(current_text.strip())
+        return split_texts
     
 class HTMLUtils:
     def __init__(self):
@@ -115,6 +138,47 @@ class HTMLUtils:
         return meta_data
 
 
+class FileUtils:
+    def __init__(self):
+        pass
+    
+    def getFileText(text_path, splitText = True):
+        url = text_path
+        suffix = os.path.splitext(text_path)[-1]
+        if validators.url(url):
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",}
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, "html.parser")
+                text = soup.get_text()
+            else:
+                raise ValueError(f"Invalid URL! Status code {response.status_code}.")
+        elif suffix == ".pdf":
+            full_text = ""
+            num_pages = 0
+            with fitz.open(text_path) as doc:
+                for page in doc:
+                    num_pages += 1
+                    text = page.get_text()
+                    full_text += text + "\n"
+            text = f"This is a {num_pages}-page document.\n" + full_text
+        elif ".doc" in suffix:
+            doc = docx.Document(text_path)
+            fullText = []
+            for para in doc.paragraphs:
+                fullText.append(para.text)
+            text = '\n'.join(fullText)
+        elif suffix == ".txt":
+            with open(text_path, 'r', encoding='utf8') as f:
+                lines = f.readlines()
+            text = '\n'.join(lines)
+        else:
+            raise ValueError("Invalid document path!")
+        if splitText:
+            text = " ".join(text.split())
+        return text
+
+
 class ImageUtils:
     def __init__(self):
         pass
@@ -145,14 +209,16 @@ class ImageUtils:
 
 class SaveUtils:
     baseDir = ''
+    subDir = ''
     def __init__(self, baseDir):
         self.baseDir = baseDir
 
+    def updateSubDir(self, subDir):
+        self.subDir = subDir
+    
     def getBaseDir(self):
-        baseDir = self.baseDir
-        # check environ value
-        if os.environ['_CLOUD_SETUP_']:
-           baseDir = os.path.join(os.getcwd(), self.baseDir)
+        baseDir = os.path.join(self.baseDir, self.subDir)
+        #baseDir = os.path.join(os.getcwd(), self.baseDir)
         return baseDir
     
     def saveData(self, fileName, data):
@@ -213,3 +279,4 @@ class SaveUtils:
             filePaths.append(filePath)
         print(filePaths)
         return filePaths
+    

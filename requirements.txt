@@ -1,5 +1,6 @@
 ## Common
 beautifulsoup4
+validators
 
 ## Youtube
 yt-dlp
@@ -7,36 +8,26 @@ SpeechRecognition
 opencv-python
 moviepy
 
-## AI ##
+## AI
 openai
 PyKakao
+## AI Embed
+jsonlines
+tiktoken
 
 ## google search
 pytrends
+google-api-python-client
 ## news
 feedparser
+## files
+PyMuPDF
+docx
+python-docx
+## wiki
+wikipedia-api
 
-#ffmpeg
-# https://adamtheautomator.com/install-ffmpeg/
-# New-Item -Type Directory -Path C:\ffmpeg ; Set-Location C:\ffmpeg
-# curl.exe -L 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -o 'ffmpeg.zip'
-# Expand-Archive .\ffmpeg.zip -Force -Verbose
-# Move the executable (*.exe) files to the top folder
-# Get-ChildItem -Recurse `
-#     -Path .\ffmpeg\ -Filter *.exe |
-#     ForEach-Object {
-#         Move-Item $_ -Destination .\ -Verbose
-#     }
-# # Clean up
-# Remove-Item .\ffmpeg\ -Recurse
-# Remove-Item .\ffmpeg.zip
-# # List the directory contents
-# Get-ChildItem
-# # Prepend the FFmpeg folder path to the system path variable
-# [System.Environment]::SetEnvironmentVariable(
-#     "PATH",
-#     "C:\ffmpeg\;$([System.Environment]::GetEnvironmentVariable('PATH','MACHINE'))",
-#     "Machine"
-# )
-#$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-#ffmpeg -version
+## image search
+bing-image-downloader
+Google-Images-Search
+windows-curses

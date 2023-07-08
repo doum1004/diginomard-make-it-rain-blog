@@ -3,8 +3,6 @@ from utils import SaveUtils
 from utils import ImageUtils
 from PyKakao import Karlo
 
-os.environ['KAKAO_API_KEY']="YOUR_KEY"
-
 class KakaoAI:
     karlo = Karlo(service_key = os.environ['KAKAO_API_KEY'])
     saveUtils = SaveUtils('__output/kakaoAI/')

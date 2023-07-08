@@ -4,7 +4,7 @@ from pytrends.request import TrendReq
 
 class GoogleTrend:
     COUNTRIES = ['south_korea', 'united_states', 'canada']
-    pytrends = TrendReq(tz=360)
+    pytrends = TrendReq()
     country = ''
     def __init__(self, country_index):
         self.country = self.COUNTRIES[country_index]

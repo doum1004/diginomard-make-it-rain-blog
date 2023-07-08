@@ -1,9 +1,18 @@
+import hashlib
 import os
+import time
+import jsonlines
 import openai
-from numpy import maximum
+import tiktoken
+import json
+import tqdm
+import numpy as np
+from numpy.linalg import norm
 from utils import SaveUtils
+from pathlib import Path
 
-os.environ['KAKAO_API_KEY']="YOUR_KEY"
+#os.environ['OPENAI_API_KEY']="YOUR_KEY"
+tokenizer = tiktoken.get_encoding("cl100k_base")
 
 class OpenAI:
     openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -11,18 +20,33 @@ class OpenAI:
     def __init__(self):
         pass
 
-    def _chatMessages(self, messages: list):
+    def getTokenUsage(text):
+        return len(tokenizer.encode(text))
+
+    def _embedding(self, text, model="text-embedding-ada-002"):
+        text = text.replace("\n", " ")
+        print(f'ChatGPT openai.Embedding is used (token :{OpenAI.getTokenUsage(text)})')
+        return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
+
+    def _chatMessages(self, messages: list, keyword = 'chatgpt'):
         print(messages)
+        json_str = json.dumps(messages)
+        print(f'ChatGPT openai.ChatCompletion is used (token :{OpenAI.getTokenUsage(json_str)})')
         response = openai.ChatCompletion.create (
             model="gpt-3.5-turbo", #gpt-3.5-turbo-0613
-            messages = messages
+            messages = messages,
+            # temperature = 1,
+            # top_p = 0.95,
+            # # max_tokens=2000,
+            # frequency_penalty = 0.0,
+            # presence_penalty = 0.0
         )
         responseContents = []
         for choice in response["choices"]:
             responseContents.append(choice["message"]["content"])
         responseContent = "\n".join(responseContents)
-        self.saveUtils.saveData("chatgpt", str(messages) + "\n" + responseContent)
-        print(responseContent)
+        self.saveUtils.saveData(keyword, str(messages) + "\n" + responseContent)
+        #print(responseContent)
         return responseContent
 
     def _createImage(self, q, nbImage, size=512):
@@ -46,7 +70,7 @@ class OpenAI:
             self.saveUtils.saveImageFromURL('chatgpt_image', url)
         return imageURLs
     
-    def chatMessageContents(self, systemConent, userConent, assistantContent = '', messages = []):
+    def chatMessageContents(self, systemConent, userConent, assistantContent = '', messages = [], keyword = ''):
         if systemConent == '' and userConent == '':
             print('Invalid Prompts')
             return
@@ -65,7 +89,7 @@ class OpenAI:
                     "role": "assistant",
                     "content": assistantContent
                 })
-        return self._chatMessages(messages)
+        return self._chatMessages(messages, keyword)
 
     def createImage(self, q, nbImage = 1, skipDetailing = True, skipGeneratingPrompts = True):
         # get detail description

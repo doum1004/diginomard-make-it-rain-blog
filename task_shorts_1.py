@@ -6,11 +6,11 @@ from utils import SaveUtils, Utils
 def getInfoBeforeDie():
     def getPrompts(keyword):
         systemContent = f"I want you to act as a wikipedia. You will provide valuable information everyone must know."
-        userContent = f'Give me a 20 seconds video script about 3 {keyword} before we die we must know. And put 5 hash tags. Write in English'
+        userContent = f'Give me a 60 seconds video script about 3 {keyword} knowledge and information we must know. And put 5 hash tags. Write in English'
         assistantContent = f""
         return systemContent, userContent, assistantContent
     
-    def getTranslateion(answer):
+    def getTranslatePrompts(answer):
         #systemContent = f"I want you to act as a news reporter. We will utilize the following news article to provide valuable information:\n\n{newsData[:2500]}."
         systemContent = f""
         userContent = "Translate to Korean. Must Write in Korean"
@@ -18,14 +18,12 @@ def getInfoBeforeDie():
         return systemContent, userContent, assistantContent
     
     def getBriftPrompts(answer):
-        #systemContent = f"I want you to act as a news reporter. We will utilize the following news article to provide valuable information:\n\n{newsData[:2500]}."
         systemContent = f""
         userContent = "Give brift."
         assistantContent = f"{answer}"
         return systemContent, userContent, assistantContent
     
     def getDetailPrompts(answer):
-        #systemContent = f"I want you to act as a news reporter. We will utilize the following news article to provide valuable information:\n\n{newsData[:2500]}."
         systemContent = f""
         userContent = "Give more detail."
         assistantContent = f"{answer}"
@@ -35,8 +33,11 @@ def getInfoBeforeDie():
 
     openai = OpenAI()
     prompts = getPrompts(keyword)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
-    prompts = getTranslateion(result)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
+    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = f'{keyword}_en')
+    print(result)
+
+    prompts = getTranslatePrompts(result)
+    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = f'{keyword}_ko')
+    print(result)
 
 getInfoBeforeDie()
