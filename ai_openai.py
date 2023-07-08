@@ -8,7 +8,8 @@ import json
 import tqdm
 import numpy as np
 from numpy.linalg import norm
-from utils import SaveUtils
+from prompts import PromptGenerator
+from utils import SaveUtils, Utils
 from pathlib import Path
 
 #os.environ['OPENAI_API_KEY']="YOUR_KEY"
@@ -29,11 +30,14 @@ class OpenAI:
         return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
 
     def _chatMessages(self, messages: list, keyword = 'chatgpt'):
+        if keyword == '':
+            keyword = 'chatgpt'
+
         print(messages)
         json_str = json.dumps(messages)
         print(f'ChatGPT openai.ChatCompletion is used (token :{OpenAI.getTokenUsage(json_str)})')
         response = openai.ChatCompletion.create (
-            model="gpt-3.5-turbo", #gpt-3.5-turbo-0613
+            model="gpt-3.5-turbo", #gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
             messages = messages,
             # temperature = 1,
             # top_p = 0.95,
@@ -70,6 +74,13 @@ class OpenAI:
             self.saveUtils.saveImageFromURL('chatgpt_image', url)
         return imageURLs
     
+    def chatContinue(dataFile, keyword):
+        lines = Utils.readFilelines(dataFile)
+        messages = Utils.loadJson(lines[0])
+        answer = '\n'.join(lines[1:])
+        prompts = PromptGenerator.getContinuePrompts(answer)
+        return openai.chatMessageContents(prompts[0], prompts[1], prompts[2], messages, keyword)
+
     def chatMessageContents(self, systemConent, userConent, assistantContent = '', messages = [], keyword = ''):
         if systemConent == '' and userConent == '':
             print('Invalid Prompts')
@@ -90,7 +101,26 @@ class OpenAI:
                     "content": assistantContent
                 })
         return self._chatMessages(messages, keyword)
+    
+    def getSummary(self, text):
+        split_texts = Utils.splitText(text)
+        summaries = []
+        for i , text in enumerate(split_texts):
+            if i % 5 == 4 and input('Continue for typing any ? (Too much token spend) : ') == '':
+                break
+            prompts = PromptGenerator.getSummaryPrompts(text)
+            result = self.chatMessageContents(prompts[0], prompts[1], prompts[2], [], keyword='Summary')
+            if 'I apologize, but it seems that the provided text is not clear' in result:
+                print(result)
+                if input('Failed to get answer. Continue (press any) ? : '):
+                    break
+            summaries.append(result)
+            time.sleep(5) # up to 20 api calls per min
 
+        text_summary = '\r\n'.join(summaries)
+        print(text_summary)
+        return text_summary
+        
     def createImage(self, q, nbImage = 1, skipDetailing = True, skipGeneratingPrompts = True):
         # get detail description
         messages = []

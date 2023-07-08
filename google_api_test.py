@@ -1,9 +1,10 @@
 from google_api import GoogleAPI
 
 googleAPI = GoogleAPI()
-result = googleAPI.search('wikipedia 브래드피트')
-print(result)
-result = googleAPI.searchImage('브래드피트')
-print(result)
-result = googleAPI.searchImage2('브래드피트')
-print(result)
+q = '토니 에르만'
+# result = googleAPI.search(f'justwatch {q}', 1)
+# print(result[0])
+# result = googleAPI.search(f'다음영화 {q}', 1)
+# print(result[0])
+result = googleAPI.searchImage(f'{q}', 1)
+print(result[0])

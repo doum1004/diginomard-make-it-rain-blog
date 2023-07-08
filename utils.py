@@ -28,6 +28,15 @@ class Utils:
     def __init__(self):
         pass
 
+    def loadJson(data):
+        data = data.replace("\'", "\"").replace('"', '\"')
+        return json.loads(data, strict=False)
+
+    def readFilelines(filePath):
+        with open(filePath, 'r', encoding='utf8') as f:
+            lines = f.readlines()
+        return lines
+
     def readJsonFile(filePath):
         try:
             with open(filePath, 'r') as file:
@@ -40,7 +49,7 @@ class Utils:
         if type(data) == dict or type(data) == list:
             return True
         try:
-            json.loads(data)
+            Utils.loadJson(data)
         except:
             return False
         return True
@@ -86,6 +95,20 @@ class Utils:
         if current_text:
             split_texts.append(current_text.strip())
         return split_texts
+    
+    def splitLinesBySentence(text, max_length = 70):
+        sentences = re.split(r"(?<=[.!?])\s+", text)
+        result = []
+        current_line = ""
+        for sentence in sentences:
+            if len(current_line + sentence) <= max_length:
+                current_line += sentence
+            else:
+                result.append(current_line.strip())
+                current_line = sentence
+        if current_line:
+            result.append(current_line.strip())
+        return "\n".join(result)
     
 class HTMLUtils:
     def __init__(self):
@@ -169,8 +192,7 @@ class FileUtils:
                 fullText.append(para.text)
             text = '\n'.join(fullText)
         elif suffix == ".txt":
-            with open(text_path, 'r', encoding='utf8') as f:
-                lines = f.readlines()
+            lines = Utils.readFilelines(text_path)
             text = '\n'.join(lines)
         else:
             raise ValueError("Invalid document path!")
@@ -222,8 +244,11 @@ class SaveUtils:
         return baseDir
     
     def saveData(self, fileName, data):
-        if fileName == '' or data == '':
-            return
+        if data == '':
+            raise 'Invalid Argument'
+        
+        if fileName == '':
+            fileName = 'Unkown'
         
         isJson = Utils.isJsonString(data)
         ext = 'txt'

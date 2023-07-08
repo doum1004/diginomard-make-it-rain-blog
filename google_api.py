@@ -10,9 +10,10 @@ class GoogleAPI:
 
     def _search(self, query, searchType = '', num=10):
         service = build("customsearch", "v1", developerKey=self.api_key)
-        serviceList = service.cse().list(q=query, cx=self.custom_search_engine_id, num=num)
         if searchType != '':
-            serviceList.searchType = searchType
+            serviceList = service.cse().list(q=query, cx=self.custom_search_engine_id, num=num, searchType = searchType)
+        else:
+            serviceList = service.cse().list(q=query, cx=self.custom_search_engine_id, num=num)
         result = serviceList.execute()
 
         links = []

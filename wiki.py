@@ -24,7 +24,7 @@ class Wiki:
         soup = BeautifulSoup(response.text, 'html.parser')
         title = soup.find('h1', {'id': 'firstHeading'}).text
         
-        self.getWiki(title)
+        return self.getWiki(title)
 
     def getWikiPage(self, keyword):
         for i, lang in enumerate(self.CODE_LANGS):
@@ -55,3 +55,4 @@ class Wiki:
         print("Page - Title: %s" % page_py.title)
         print("Page - Summary: %s" % page_py.summary[:200])
         self.saveUtils.saveData(keyword, page_py.text)
+        return page_py.text
