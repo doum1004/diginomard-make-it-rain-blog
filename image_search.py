@@ -31,7 +31,6 @@ class ImageSearch:
     
     def getImageFromGoogle(self, q, nbImage = 10):
         result = self.googleAPI.searchImage2(q, nbImage)
-        self.saveUtils.updateSubDir(q)
         for item in result:
             self.saveUtils.saveImageFromURL(q, item)
 

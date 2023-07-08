@@ -65,7 +65,7 @@ class Utils:
     def getCurrentTime():
         return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
     
-    def getUniqueFileNameUnderDirs(dirs, fileName, ext):
+    def getUniqueFileNameUnderDirs(dirs, ext, fileName = ''):
         def getFileName(fileName, i, ext):
             return f'{Utils.getCurrentTime()}_{fileName}_{i}.{ext}'
         
@@ -231,33 +231,26 @@ class ImageUtils:
 
 class SaveUtils:
     baseDir = ''
-    subDir = ''
     def __init__(self, baseDir):
         self.baseDir = baseDir
 
-    def updateSubDir(self, subDir):
-        self.subDir = subDir
-    
-    def getBaseDir(self):
-        baseDir = os.path.join(self.baseDir, self.subDir)
+    def getBaseDir(self, subDir = ''):
+        baseDir = os.path.join(self.baseDir, subDir)
         #baseDir = os.path.join(os.getcwd(), self.baseDir)
         return baseDir
     
-    def saveData(self, fileName, data):
+    def saveData(self, subDir, data):
         if data == '':
             raise 'Invalid Argument'
-        
-        if fileName == '':
-            fileName = 'Unkown'
         
         isJson = Utils.isJsonString(data)
         ext = 'txt'
         if isJson:
            ext = 'json'
 
-        baseDir = self.getBaseDir()
+        baseDir = self.getBaseDir(subDir)
         dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, fileName, ext)
+        fileName = Utils.getUniqueFileNameUnderDirs(dirs, ext)
 
         filePaths = []
         for dir in dirs:
@@ -270,13 +263,13 @@ class SaveUtils:
             filePaths.append(filePath)
         print(filePaths)
 
-    def saveImageFromURL(self, fileName, url):
+    def saveImageFromURL(self, subDir, url):
         if fileName == '' or url == '':
             return
         
-        baseDir = self.getBaseDir()
+        baseDir = self.getBaseDir(subDir)
         dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, fileName, 'jpg')
+        fileName = Utils.getUniqueFileNameUnderDirs(dirs, 'jpg')
 
         filePaths = []
         for dir in dirs:
@@ -287,15 +280,15 @@ class SaveUtils:
         return filePaths
 
 
-    def saveImageFromBase64(self, fileName, base64Code):
+    def saveImageFromBase64(self, subDir, base64Code):
         if fileName == '' or fileName == '':
             return
         
         image = ImageUtils.getImageFromBase64(base64Code)
 
-        baseDir = self.getBaseDir()
+        baseDir = self.getBaseDir(subDir)
         dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, fileName, 'jpg')
+        fileName = Utils.getUniqueFileNameUnderDirs(dirs, 'jpg')
 
         filePaths = []
         for dir in dirs:
