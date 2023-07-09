@@ -1,16 +1,11 @@
-import hashlib
 import os
 import time
-import jsonlines
 import openai
 import tiktoken
 import json
-import tqdm
-import numpy as np
-from numpy.linalg import norm
-from prompts import PromptGenerator
-from utils import SaveUtils, Utils
 from pathlib import Path
+from .prompts import PromptGenerator
+from .utils import SaveUtils, Utils
 
 #os.environ['OPENAI_API_KEY']="YOUR_KEY"
 tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -37,7 +32,7 @@ class OpenAI:
         json_str = json.dumps(messages)
         print(f'ChatGPT openai.ChatCompletion is used (token :{OpenAI.getTokenUsage(json_str)})')
         response = openai.ChatCompletion.create (
-            model="gpt-3.5-turbo", #gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
+            model= "gpt-3.5-turbo", #gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
             messages = messages,
             # temperature = 1,
             # top_p = 0.95,

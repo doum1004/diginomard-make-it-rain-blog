@@ -1,9 +1,8 @@
 import os
 import imghdr
 from bing_image_downloader import downloader
-
-from google_api import GoogleAPI
-from utils import SaveUtils
+from .google_api import GoogleAPI
+from .utils import SaveUtils
 
 
 class ImageSearch:

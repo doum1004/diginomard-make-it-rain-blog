@@ -1,5 +1,5 @@
-from google_api import GoogleAPI
-from wiki import Wiki
+from diginomard_toolkit.google_api import GoogleAPI
+from diginomard_toolkit.wiki import Wiki
 
 def searchWiki(q):
     googleAPI = GoogleAPI()

@@ -3,7 +3,7 @@ import os
 import yt_dlp
 import requests
 
-from utils import SaveUtils
+from .utils import SaveUtils
 
 class YoutubeLoader:
     saveUtils = SaveUtils('__output/youtube')

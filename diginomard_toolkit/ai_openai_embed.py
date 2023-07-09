@@ -8,9 +8,9 @@ import json
 import tqdm
 import numpy as np
 from numpy.linalg import norm
-from utils import SaveUtils
 from pathlib import Path
-from ai_openai import OpenAI
+from .utils import SaveUtils
+from .ai_openai import OpenAI
 
 class OpenAIEmbedding:
     openAI = OpenAI()

@@ -1,7 +1,7 @@
 import os
-from utils import SaveUtils
-from utils import ImageUtils
-from PyKakao import Karlo
+from .utils import SaveUtils
+from .utils import ImageUtils
+from .PyKakao import Karlo
 
 class KakaoAI:
     karlo = Karlo(service_key = os.environ['KAKAO_API_KEY'])

@@ -1,3 +1,4 @@
+import shutil
 import cv2
 import numpy as np
 import base64
@@ -109,6 +110,13 @@ class Utils:
         if current_line:
             result.append(current_line.strip())
         return "\n".join(result)
+    
+    def moveFiles(files, dir):
+        for source in files:
+            filename = os.path.basename(source)
+            destination = os.path.join(dir, filename)
+            shutil.move(source, destination)
+
     
 class HTMLUtils:
     def __init__(self):
@@ -262,9 +270,10 @@ class SaveUtils:
                     writefile.write(data)
             filePaths.append(filePath)
         print(filePaths)
+        return filePaths
 
     def saveImageFromURL(self, subDir, url):
-        if fileName == '' or url == '':
+        if url == '':
             return
         
         baseDir = self.getBaseDir(subDir)

@@ -1,14 +1,14 @@
 from bs4 import BeautifulSoup
 import requests
 import wikipediaapi
-from utils import SaveUtils
+from .utils import SaveUtils
 
 class Wiki:
     saveUtils = SaveUtils('__output/wiki/')
     CODE_LANGS = ["ko", "en"]
     code_lang = ''
-    def __init__(self, country_index = 0):
-        self.updateWikiLang(country_index)
+    def __init__(self):
+        self.updateWikiLang(0)
         pass
 
     def updateWikiLang(self, country_index):

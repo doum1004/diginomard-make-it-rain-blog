@@ -1,4 +1,4 @@
-from ai_openai import OpenAI
+from diginomard_toolkit.ai_openai import OpenAI
 
 openai = OpenAI()
 #openai.chatMessageContents('', 'How to create youtube shorts ?')

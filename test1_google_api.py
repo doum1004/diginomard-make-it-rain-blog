@@ -1,4 +1,4 @@
-from google_api import GoogleAPI
+from diginomard_toolkit.google_api import GoogleAPI
 
 googleAPI = GoogleAPI()
 q = '토니 에르만'

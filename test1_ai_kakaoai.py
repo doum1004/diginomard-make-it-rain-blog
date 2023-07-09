@@ -1,4 +1,4 @@
-from ai_kakaoai import KakaoAI
+from diginomard_toolkit.ai_kakaoai import KakaoAI
 
 kakaoAI = KakaoAI()
 files = kakaoAI.getKakaoImage('''Test''',

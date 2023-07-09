@@ -1,23 +1,11 @@
-from google_trend import GoogleTrend
-from news import News
-from ai_openai import OpenAI
-from prompts import PromptGenerator
-from utils import Utils
+from diginomard_toolkit.google_trend import GoogleTrend
+from diginomard_toolkit.image_search import ImageSearch
+from diginomard_toolkit.news import News
+from diginomard_toolkit.ai_openai import OpenAI
+from diginomard_toolkit.prompts import PromptGenerator
+from diginomard_toolkit.utils import SaveUtils, Utils
 
 def getNewsBlogPost():
-    def getNewsBlogPrompts(newsData):
-        systemContent = f"I want you to act as a news reporter. You will utilize the news article to provide valuable information."
-        userContent = "Summury Suggest title and subheaders. Put 5 hash tags on the bottom. Must write it in Markdown style and English."
-        assistantContent = f"{newsData[:2500]}"
-        return systemContent, userContent, assistantContent
-
-    def getBlogPrompts2(q):
-        #systemContent = f"I want you to act as a news reporter. You will utilize the following news article to provide valuable information:\n\n{newsData[:2500]}."
-        systemContent = f"You are an assistant who is good at creating prompts for image creation. Your job is to provide detailed and creative descriptions that will inspire unique and interesting images from the AI. Keep in mind that the AI is capable of understanding a wide range of language and can interpret abstract concepts. It has to be within 500 chars." #so feel free to be as imaginative and descriptive as possible. It has to be within 500 chars."
-        userContent = f"Condense up to 4 outward description to focus on nouns and adjectives separated by ,"
-        assistantContent = f"{q}"
-        return systemContent, userContent, assistantContent
-
     googleTrend = GoogleTrend(0)
     trends = googleTrend.getTrends()
     print(trends)
@@ -28,13 +16,21 @@ def getNewsBlogPost():
     result_news = news.getAllNews(keyword)
 
     openai = OpenAI()
-    prompts = getNewsBlogPrompts(result_news)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-    if len(result) < 400:
-        prompts = PromptGenerator.getDetailsPrompts(result)
-        result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+    prompts = PromptGenerator.getNewsBlogPrompts(result_news)
+    resultEng = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+    if len(resultEng) < 400:
+        prompts = PromptGenerator.getDetailsPrompts(resultEng)
+        resultEng = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
 
-    prompts = PromptGenerator.getTranslatePrompts(result)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], [], keyword = keyword)
+    prompts = PromptGenerator.getTranslatePrompts(resultEng)
+    resultKor = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], [], keyword = keyword)
+    
+    dir = '__output/blog/news'
+    saveUtils = SaveUtils(dir)
+    saveUtils.saveData(keyword, resultKor)
+
+    imageSearch = ImageSearch()
+    images = imageSearch.getImageFromBing(f'{keyword}', 5)
+    Utils.moveFiles(images, dir)
 
 getNewsBlogPost()

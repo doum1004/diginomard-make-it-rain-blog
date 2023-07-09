@@ -1,8 +1,8 @@
 import feedparser
 import datetime
 from bs4 import BeautifulSoup
-from utils import HTMLUtils
-from utils import SaveUtils
+from .utils import HTMLUtils
+from .utils import SaveUtils
 
 class News:
     saveUtils = SaveUtils('__output/news/')

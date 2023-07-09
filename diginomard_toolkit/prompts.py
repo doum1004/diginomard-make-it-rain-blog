@@ -4,10 +4,16 @@ class PromptGenerator:
 
     def getMovieBlogPostPrompts(newsData):
         systemContent = f"I want you to act as a critic. You will provide valuable information everyone must know."
-        userContent = "Rewrite a Blog post. Follow this Format: ### Intro, ### 📝 Movie Story, ### 💡 Thought, ### 🎵 Fun Facts,  ### 🎥 Similar Movies, ### 🌟 Ending Message, ### 🔖 Hash Tags. Markdown style. Split lines by sentence for better readability."
+        userContent = "Write a Blog post. Follow this Format: ### Intro, ### 📝 Movie Story, ### 🎵 Fun Facts, ### 💡 Thought,  ### 🎥 Similar Movies, ### 🌟 Ending Message, ### 🔖 Hash Tags. Markdown style. Split lines by sentence for better readability."
         assistantContent = f"{newsData[:2500]}"
         return systemContent, userContent, assistantContent
     
+    def getNewsBlogPrompts(newsData):
+        systemContent = f"I want you to act as a news reporter. You will utilize the news article to provide valuable information."
+        userContent = "Write a Blog post. Follow this Format: ### Intro, ### 📝 Story, ### 🎵 Information, ### 💡 Thought and Insight, ### 🌟 Ending Message, ### 🔖 Hash Tags. Markdown style. Split lines by sentence for better readability."
+        assistantContent = f"{newsData[:2500]}"
+        return systemContent, userContent, assistantContent
+
     def getBlogPostPrompts(newsData):
         systemContent = f"I want you to act as a critic. You will provide valuable information everyone must know."
         userContent = "Write a Blog post. The blog includes Title, Summary, Fun facts in headers, insight, and similar movies. Put 5 hash tags at the end. Markdown style."

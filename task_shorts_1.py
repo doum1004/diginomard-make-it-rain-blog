@@ -1,7 +1,7 @@
-from google_trend import GoogleTrend
-from news import News
-from ai_openai import OpenAI
-from utils import SaveUtils, Utils
+from diginomard_toolkit.google_trend import GoogleTrend
+from diginomard_toolkit.news import News
+from diginomard_toolkit.ai_openai import OpenAI
+from diginomard_toolkit.utils import SaveUtils, Utils
 
 def getInfoBeforeDie():
     def getPrompts(keyword):

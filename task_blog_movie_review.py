@@ -1,14 +1,13 @@
 import os
 import time
-from google_api import GoogleAPI
-
-from google_trend import GoogleTrend
-from news import News
-from ai_openai import OpenAI
-from ai_openai_embed import OpenAIEmbedding
-from prompts import PromptGenerator
-from utils import SaveUtils, Utils, FileUtils
-from wiki import Wiki
+from diginomard_toolkit.google_api import GoogleAPI
+from diginomard_toolkit.google_trend import GoogleTrend
+from diginomard_toolkit.news import News
+from diginomard_toolkit.ai_openai import OpenAI
+from diginomard_toolkit.ai_openai_embed import OpenAIEmbedding
+from diginomard_toolkit.prompts import PromptGenerator
+from diginomard_toolkit.utils import SaveUtils, Utils, FileUtils
+from diginomard_toolkit.wiki import Wiki
 
 googleAPI = GoogleAPI()
 def searchWiki(q):
