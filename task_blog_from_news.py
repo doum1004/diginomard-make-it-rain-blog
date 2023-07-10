@@ -11,8 +11,12 @@ def getNewsBlogPost():
     print(trends)
 
     news = News(1)
-    index = input('Give trend index : ')
-    keyword = trends[int(index)]
+    input1 = input('Give trend index or keyword : ')
+    # is number or not
+    if input1.isdigit():
+        keyword = trends[int(input1)]
+    else:
+        keyword = input1
     result_news = news.getAllNews(keyword)
 
     openai = OpenAI()

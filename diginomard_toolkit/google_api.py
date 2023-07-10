@@ -8,7 +8,7 @@ class GoogleAPI:
     def __init__(self):
         pass
 
-    def _search(self, query, searchType = '', num=10):
+    def _search(self, query, searchType = '', num=10, itemKey = 'link'):
         service = build("customsearch", "v1", developerKey=self.api_key)
         if searchType != '':
             serviceList = service.cse().list(q=query, cx=self.custom_search_engine_id, num=num, searchType = searchType)
@@ -17,12 +17,13 @@ class GoogleAPI:
         result = serviceList.execute()
 
         links = []
-        for image in result['items']:
-            links.append(image['link'])
+        for item in result['items']:
+            #print(item)
+            links.append(item[itemKey])
         return links
 
-    def search(self, query, num = 10):
-        return self._search(query, '', num)
+    def search(self, query, num = 10, itemKey = 'link'):
+        return self._search(query, '', num, itemKey)
     
     def searchImage(self, query, num = 10):
         return self._search(query, 'image', num)
