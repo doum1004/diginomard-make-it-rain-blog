@@ -2,8 +2,8 @@ from diginomard_toolkit.youtube_loader import YoutubeLoader
 
 youtubeLoader = YoutubeLoader()
 def test_YoutubeLoader():
-    url = input('Get URL : ')
+    url = 'https://youtu.be/JD-b-Zl7yso'
     if url == '':
-        url = 'https://www.youtube.com/watch?v=3-hTgRO093Q'
+        url = input('Get URL : ')
     youtubeLoader.getYoutubeScript(url, 'en')
     #getYoutube(url)

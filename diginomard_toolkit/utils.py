@@ -18,10 +18,8 @@ from PIL import Image
 from io import BytesIO
 from pathlib import Path
 
-if not '_CLOUD_SETUP_' in os.environ:
-    os.environ['_CLOUD_SETUP_'] = '0'
-if not '_SAVE_GOOLECLOUD_' in os.environ:
-    os.environ['_SAVE_GOOLECLOUD_'] = '0'
+# if not '_SAVE_GOOLECLOUD_' in os.environ:
+#     os.environ['_SAVE_GOOLECLOUD_'] = '0'
 
 context = ssl.create_default_context(cafile=certifi.where())
 
@@ -55,10 +53,15 @@ class Utils:
             return False
         return True
        
+    def fixDirectoryName(path):
+        pattern = r'[<>:"/\\|?*]'
+        new_path = re.sub(pattern, '', path)
+        return new_path
+
     def getDirs(baseDir):
         dirs = [f'{baseDir}']
-        if '_SAVE_GOOLECLOUD_' in os.environ and os.environ['_SAVE_GOOLECLOUD_']:
-           dirs.append(os.path.join('/content/drive/MyDrive/diginormad', baseDir))
+        # if '_SAVE_GOOLECLOUD_' in os.environ and os.environ['_SAVE_GOOLECLOUD_']:
+        #    dirs.append(os.path.join('/content/drive/MyDrive/diginormad', baseDir))
         for dir in dirs:
             Path(dir).mkdir(parents=True, exist_ok=True)
         return dirs
@@ -80,7 +83,7 @@ class Utils:
                 filePath = os.path.join(dir, newFileName)
         return newFileName
     
-    def splitText(text, max_tokens = 1000):
+    def splitText(text, max_tokens = 2000):
         tokens = text.split()
         split_texts = []
         current_text = ""
@@ -243,9 +246,9 @@ class SaveUtils:
         self.baseDir = baseDir
 
     def getBaseDir(self, subDir = ''):
-        baseDir = os.path.join(self.baseDir, subDir)
-        #baseDir = os.path.join(os.getcwd(), self.baseDir)
-        return baseDir
+        dir = os.path.join(self.baseDir, Utils.fixDirectoryName(subDir))
+        #baseDir = os.path.join(os.getcwd(), dir)
+        return dir
     
     def saveData(self, subDir, data):
         if data == '':

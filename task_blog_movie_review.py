@@ -33,28 +33,27 @@ def getMovieBlogPost(text, keyword):
     openai = OpenAI()
     text_summary = openai.getSummary(text)
     prompts = PromptGenerator.getMovieBlogPostPrompts(text_summary)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-    print(result)
+    resultEng = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+    
+    # add additional info
+    resultEng += "\n\n"
+    images = googleAPI.searchImage(f'{q}', 5)
+    resultEng += "\n".join(images)
+    link = googleAPI.search(f'justwatch {q}', 1)
+    resultEng += "\n" + link[0]
+    print(resultEng)
 
-    prompts = PromptGenerator.getTranslatePrompts(result)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-    print(result)
-    return result
-
-
-q = '영화 그녀가 말했다'
-text = searchWiki(q)
-post = getMovieBlogPost(text, q)
-#post = Utils.splitLinesBySentence(post)
-if post:
-    post += f"\n\n\n"
-    result = googleAPI.searchImage(f'{q}', 3)
-    post += f"\n{result[0]}"
-    result = googleAPI.search(f'justwatch {q}', 1)
-    post += f"\n{result[0]}"
-    result = googleAPI.search(f'{q}', 1)
-    post += f"\n{result[0]}"
-    print(post)
+    prompts = PromptGenerator.getTranslatePrompts(resultEng)
+    resultKor = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+    print(resultKor)
 
     saveUtils = SaveUtils('__output/blog/movie')
-    saveUtils.saveData(q, post)
+    saveUtils.saveData(q, resultEng)
+    saveUtils.saveData(q, resultKor)
+    
+    return resultKor
+
+
+q = '비틀즈 겟 백 : 루프탑 콘서트'
+text = searchWiki(q)
+post = getMovieBlogPost(text, q)

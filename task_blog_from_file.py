@@ -7,7 +7,10 @@ from diginomard_toolkit.ai_openai_embed import OpenAIEmbedding
 from diginomard_toolkit.prompts import PromptGenerator
 from diginomard_toolkit.utils import SaveUtils, Utils, FileUtils
 
-def getFileSummary(inputPath = ''):
+def getFileSummary(keyword = '', inputPath = '', pauseStep = 5):
+    if keyword == '':
+        keyword = input(f'Give input keyword : ')
+
     if inputPath == '':
         inputPath = input(f'Give input file or path : ')
     
@@ -24,16 +27,22 @@ def getFileSummary(inputPath = ''):
         text = text[:i]
 
     openai = OpenAI()
-    text_summary = openai.getSummary(text)
+    text_summary = openai.getSummary(text, pauseStep)
 
     prompts = PromptGenerator.getBlogPostPrompts(text_summary)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
-    print(result)
+    resultEng = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
+    print(resultEng)
 
-    prompts = PromptGenerator.getTranslatePrompts(result)
-    result = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
-    print(result)
+    prompts = PromptGenerator.getTranslatePrompts(resultEng)
+    resultKor = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
+    print(resultKor)
 
-getFileSummary(f'__output/wiki/230707-164048_애드 아스트라_0.txt')
+    dir = '__output/blog/news'
+    saveUtils = SaveUtils(dir)
+    saveUtils.saveData(keyword, resultEng)
+    saveUtils.saveData(keyword, resultKor)
+
+
+getFileSummary('All-In Podcast E136', f'__output/youtube\\YoutubeScript\\230710-075228__0.txt', -1)
 #getFileSummary(f'__input/namu-movie9.pdf')
 #getFileSummary(f'https://en.wikipedia.org/wiki/Night_Train_to_Lisbon_(film)')

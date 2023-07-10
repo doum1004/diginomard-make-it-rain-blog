@@ -97,11 +97,11 @@ class OpenAI:
                 })
         return self._chatMessages(messages, keyword)
     
-    def getSummary(self, text):
+    def getSummary(self, text, pauseStep = 10):
         split_texts = Utils.splitText(text)
         summaries = []
         for i , text in enumerate(split_texts):
-            if i % 5 == 4 and input('Continue for typing any ? (Too much token spend) : ') == '':
+            if pauseStep != -1 and i % pauseStep == pauseStep-1 and input('Continue for typing any ? (Too much token spend) : ') == '':
                 break
             prompts = PromptGenerator.getSummaryPrompts(text)
             result = self.chatMessageContents(prompts[0], prompts[1], prompts[2], [], keyword='Summary')

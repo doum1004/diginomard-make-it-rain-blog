@@ -31,6 +31,7 @@ def getNewsBlogPost():
     
     dir = '__output/blog/news'
     saveUtils = SaveUtils(dir)
+    saveUtils.saveData(keyword, resultEng)
     saveUtils.saveData(keyword, resultKor)
 
     imageSearch = ImageSearch()

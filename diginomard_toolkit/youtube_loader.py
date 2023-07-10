@@ -64,7 +64,7 @@ class YoutubeLoader:
 
         return scripts
 
-    def getYoutubeScript(self, fileName, url, lang = 'ko'):
+    def getYoutubeScript(self, url, lang = 'ko'):
         ydl_opts = {'writesubtitles': True, 'skip-download': True}
         output = ''
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -78,7 +78,7 @@ class YoutubeLoader:
             scriptsByFrame = self.getScriptByTimeframe(scriptData)
             output = f'{title} scripts : \r\n\r\n{scriptsByFrame}'
             print(output)
-        self.saveUtils.saveData(fileName, output)
+        self.saveUtils.saveData(title, output)
         return output
         
 
