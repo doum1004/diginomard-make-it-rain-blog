@@ -1,14 +1,14 @@
 import os
 import imghdr
 from bing_image_downloader import downloader
-from .google_api import GoogleAPI
+from .google_api import GoogleImagesSearch
 from .utils import SaveUtils
 
 
 class ImageSearch:
     outputDir = '__output/image/'
     saveUtils = SaveUtils(outputDir)
-    googleAPI = GoogleAPI()
+    googleImagesSearch = GoogleImagesSearch()
     def __init__(self):
         pass
 
@@ -29,7 +29,7 @@ class ImageSearch:
         return self.getFolderFiles(f'/data/image/{q}/')
     
     def getImageFromGoogle(self, q, nbImage = 10):
-        result = self.googleAPI.searchImage2(q, nbImage)
+        result = self.googleImagesSearch.searchImage2(q, nbImage)
         for item in result:
             self.saveUtils.saveImageFromURL(q, item)
 

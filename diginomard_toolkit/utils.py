@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 from pathlib import Path
+from diginomard_toolkit.prompts import PromptGenerator
 
 # if not '_SAVE_GOOLECLOUD_' in os.environ:
 #     os.environ['_SAVE_GOOLECLOUD_'] = '0'
@@ -83,7 +84,7 @@ class Utils:
                 filePath = os.path.join(dir, newFileName)
         return newFileName
     
-    def splitText(text, max_tokens = 2000):
+    def splitText(text, max_tokens = PromptGenerator.maxToken):
         tokens = text.split()
         split_texts = []
         current_text = ""
@@ -275,6 +276,23 @@ class SaveUtils:
         print(filePaths)
         return filePaths
 
+    def saveAudio(self, subDir, data):
+        if data == '':
+            raise 'Invalid Argument'
+        
+        baseDir = self.getBaseDir(subDir)
+        dirs = Utils.getDirs(baseDir)
+        fileName = Utils.getUniqueFileNameUnderDirs(dirs, 'wav')
+
+        filePaths = []
+        for dir in dirs:
+            filePath = os.path.join(dir, fileName)
+            filePaths.append(filePath)
+            with open(filePath, "wb") as f:
+                f.write(data)
+        print(filePaths)
+        return filePaths
+    
     def saveImageFromURL(self, subDir, url):
         if url == '':
             return
