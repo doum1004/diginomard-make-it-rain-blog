@@ -6,7 +6,7 @@ from diginomard_toolkit.news import News
 from diginomard_toolkit.ai_openai import OpenAI
 from diginomard_toolkit.ai_openai_embed import OpenAIEmbedding
 from diginomard_toolkit.prompts import PromptGenerator
-from diginomard_toolkit.utils import SaveUtils, Utils, FileUtils
+from diginomard_toolkit.utils import Preference, SaveUtils, Utils, FileUtils
 from diginomard_toolkit.wiki import Wiki
 
 googleSearch = GoogleSearch()
@@ -31,22 +31,24 @@ def getMovieBlogPost(text, keyword):
         return
     input('Continue ? ')
     openai = OpenAI()
-    while len(text) > PromptGenerator.maxToken:
+    while len(text) > Preference.maxToken:
         text = openai.getSummary(text)
     prompts = PromptGenerator.getMovieBlogPostPrompts(text)
     resultEng = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-    
-    # add additional info
-    resultEng += "\n\n"
-    images = googleSearch.searchImage(f'{q}', 5)
-    resultEng += "\n".join(images)
-    link = googleSearch.search(f'justwatch {q}', 1)
-    resultEng += "\n" + link[0]
     print(resultEng)
-
+    
     prompts = PromptGenerator.getTranslatePrompts(resultEng)
     resultKor = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
     print(resultKor)
+
+    # add additional info
+    links = "\n\n\n\n"
+    images = googleSearch.searchImage(f'{q}', 5)
+    links += "\n".join(images)
+    link = googleSearch.search(f'justwatch {q}', 1)
+    links += "\n" + link[0]
+    resultEng += links
+    resultKor += links
 
     saveUtils = SaveUtils('__output/blog/movie')
     saveUtils.saveData(q, resultEng)
@@ -55,10 +57,9 @@ def getMovieBlogPost(text, keyword):
     return resultKor
 
 
-q = '마다가스카의 펭귄'
+q = '용쟁호투'
 text = searchWiki(q)
 post = getMovieBlogPost(text, q)
-
 
 # *정영진 - 마다가스카의 펭귄 (2014년作/미국/애니메이션/에릭 다넬, 시몬 J.스미스 감독)
 # *장규성 – 리바운드 (2023년作/한국/드라마/장항준 감독) 

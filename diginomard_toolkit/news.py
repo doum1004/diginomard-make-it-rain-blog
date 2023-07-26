@@ -49,19 +49,25 @@ class News:
                 content_keywords.append(meta_content)
         print(content_keywords)
 
+        html_text = soup.get_text() #html
         for content_keyword in content_keywords:
-            index = len(html)
+            if content_keyword == '':
+                continue
+            index = len(html_text)
             while index >= 0:
-                index = html.rfind(content_keyword, 0, index)
-                index1 = html.rfind('<div', 0, index)
-                index2 = html.find('</div>', index)
-                if index1 != -1 and index2 != -1:
-                    new_content = html[index1:index2]
-                    if new_content.find(content_keyword) < 100:
-                        contents.append(new_content)
-                    else:
-                        contents.append(html[index:index2])
-                    break
+                index = html_text.rfind(content_keyword, 0, index)
+                if index != -1:
+                    new_content = html_text[index:index+1000]
+                    contents.append(new_content)
+                # index1 = html_text.rfind('<div', 0, index)
+                # index2 = html_text.find('</div>', index)
+                # if index1 != -1 and index2 != -1:
+                #     new_content = html_text[index1:index2]
+                #     if new_content.find(content_keyword) < 100:
+                #         contents.append(new_content)
+                #     else:
+                #         contents.append(html_text[index:index2])
+                #     break
 
         result = []
         for content in contents:
@@ -113,6 +119,8 @@ class News:
             contents = self.findContentByClassID('api_txt_lines', soup, visitedURL)
             if not contents is None:
                 result.extend(contents)
+            else:
+                print('Failed on getNaverNews')
         return result
 
     def getGoogleNewsRss(self, q, d, nbArticle, visitedURL):

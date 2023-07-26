@@ -1,0 +1,25 @@
+{
+	"topic": "",
+	"title": "",
+	"uuid": "",
+	"lang": "",
+	"description": "",
+	"intro": {
+		"content": "",
+		"images": []
+	},
+	"main": [
+		{
+			"heading": "",
+			"tag": "",
+			"detail": {
+				"content": "",
+				"images": []
+			}
+		}
+	],
+	"conclusion": {
+		"content": "",
+		"images": []
+	}
+}

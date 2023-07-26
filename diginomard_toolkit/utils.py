@@ -1,4 +1,6 @@
 import shutil
+import time
+import uuid
 import cv2
 import numpy as np
 import base64
@@ -17,20 +19,31 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 from pathlib import Path
-from diginomard_toolkit.prompts import PromptGenerator
 
 # if not '_SAVE_GOOLECLOUD_' in os.environ:
 #     os.environ['_SAVE_GOOLECLOUD_'] = '0'
 
 context = ssl.create_default_context(cafile=certifi.where())
 
+class Preference:
+    maxToken = 2500
+
 class Utils:
     def __init__(self):
         pass
 
+    def shortUUID():
+        return str(uuid.uuid4()).split('-')[0]
+    
     def loadJson(data):
-        data = data.replace("\'", "\"").replace('"', '\"')
-        return json.loads(data, strict=False)
+        if Utils.isJsonString(data):
+            return json.loads(data)
+        return None     
+
+    def readTextFile(filePath):
+        with open(filePath, 'r', encoding='utf8') as f:
+            text = f.read()
+        return text
 
     def readFilelines(filePath):
         with open(filePath, 'r', encoding='utf8') as f:
@@ -38,18 +51,19 @@ class Utils:
         return lines
 
     def readJsonFile(filePath):
-        try:
-            with open(filePath, 'r') as file:
-                # Load the JSON data
-                return json.load(file)
-        except:
-            print('Failed')
+        with open(filePath, 'r', encoding='utf8') as file:
+            return json.load(file)
+
+    def readJsonFileAsOneLineText(filePath):
+        with open(filePath, 'r') as file:
+            # Load the JSON data
+            return json.dumps(json.load(file), separators=(',', ':'))
 
     def isJsonString(data):
         if type(data) == dict or type(data) == list:
             return True
         try:
-            Utils.loadJson(data)
+            json.loads(data)
         except:
             return False
         return True
@@ -67,12 +81,24 @@ class Utils:
             Path(dir).mkdir(parents=True, exist_ok=True)
         return dirs
 
+    def getCurrentDate():
+        return datetime.datetime.now().strftime("%y%m%d")
+    
     def getCurrentTime():
         return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
     
     def getUniqueFileNameUnderDirs(dirs, ext, fileName = ''):
-        def getFileName(fileName, i, ext):
-            return f'{Utils.getCurrentTime()}_{fileName}_{i}.{ext}'
+        def getFileName(prefix, i, ext):
+            # assign it to a variable
+            if prefix == None or prefix == '':
+                prefix = Utils.getCurrentTime()
+            # remove space on fileName
+            prefix = prefix.replace(' ', '_')
+            # if i == 0 no suffix
+            suffix = ''
+            if i != 0:
+                suffix = f'_{i}'
+            return f'{prefix}{suffix}.{ext}'
         
         i = 0
         newFileName = getFileName(fileName, i, ext)
@@ -84,7 +110,7 @@ class Utils:
                 filePath = os.path.join(dir, newFileName)
         return newFileName
     
-    def splitText(text, max_tokens = PromptGenerator.maxToken):
+    def splitText(text, max_tokens = Preference.maxToken):
         tokens = text.split()
         split_texts = []
         current_text = ""
@@ -114,14 +140,85 @@ class Utils:
         if current_line:
             result.append(current_line.strip())
         return "\n".join(result)
-    
-    def moveFiles(files, dir):
-        for source in files:
-            filename = os.path.basename(source)
-            destination = os.path.join(dir, filename)
-            shutil.move(source, destination)
 
+    # get unique file name regardless of extension
+    def getUniqueFileName(dir, name, ext, i = 0):
+        while True:
+            checkExts = ['.jpg', '.jpeg', 'png']
+            if not ext in checkExts:
+                checkExts.append(ext)
+                
+            # check all ext that all name are not exist
+            exist = False
+            for checkExt in checkExts:
+                if i > 0:
+                    newNameWithoutExt = f'{name}_{i}'
+                else:
+                    newNameWithoutExt = f'{name}'
+                newPath = os.path.join(dir, f'{newNameWithoutExt}{checkExt}')
+                if os.path.exists(newPath):
+                    exist = True
+                    break
+            if not exist:
+                break
+            i += 1
+        newPath = os.path.join(dir, f'{newNameWithoutExt}{ext}')
+        return newPath
     
+    # rename files with prefix if exist then add number suffix
+    def renameFiles(files, fileName):
+        # remove space on prefix
+        fileName = fileName.replace(' ', '_')
+        
+        newNames = []
+        for file in files:
+            dir = os.path.dirname(file)
+            ext = os.path.splitext(file)[-1]
+
+            newName = Utils.getUniqueFileName(dir, fileName, ext)
+            os.rename(file, newName)
+            newNames.append(newName)
+        return newNames
+        
+    def moveFiles(files, dir, newNameWithoutExt = '', i = 0):
+        newNames = []
+        os.makedirs(dir, exist_ok=True)
+        for source in files:
+            filename = os.path.basename(source)               
+            # get ext and name
+            nameWihtoutExt, ext = os.path.splitext(filename)
+            if newNameWithoutExt != '':
+                nameWihtoutExt = newNameWithoutExt
+            dest = Utils.getUniqueFileName(dir, nameWihtoutExt, ext, i)
+            shutil.move(source, dest)
+            newNames.append(dest)
+        return newNames
+    
+    def sanitize_folder_name(folder_name):
+        # Define a regex pattern to remove invalid characters from the folder name
+        valid_chars = '-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        sanitized_name = ''.join(c for c in folder_name if c in valid_chars)
+        return sanitized_name
+
+    def deleteFilesUnderDir(dir):
+        try:
+            if os.path.exists(dir):
+                shutil.rmtree(dir)
+        except:
+            pass
+        os.makedirs(dir, exist_ok=True)
+
+    # getCurrentDate(yyyy-mm-dd) depending on timezone (default Korea)
+    def getCurrentDate(timeZone = datetime.timezone(datetime.timedelta(hours=9))):        
+        return datetime.datetime.now(timeZone).strftime("%Y-%m-%d")
+    
+    # get RandomHour before current hour depending on timezone
+    def getTimeBeforeCurrentHour(timeZone = datetime.timezone(datetime.timedelta(hours=9))):
+        currentHour = datetime.datetime.now(timeZone).hour
+        randHour = np.random.randint(currentHour)
+        # return '##:00:00 GMT+9(depending on timezone)
+        return f'{randHour:02d}'
+
 class HTMLUtils:
     def __init__(self):
         pass
@@ -176,7 +273,20 @@ class HTMLUtils:
 class FileUtils:
     def __init__(self):
         pass
-    
+
+    def writeFile(filePath, data):
+        # get extension
+        ext = os.path.splitext(filePath)[-1]
+        with open(filePath, 'w', encoding='utf-8') as writefile:
+            if ext == '.json':
+                json.dump(data, writefile, ensure_ascii=False, indent=None)
+            else:
+                writefile.write(data)
+
+    def writeJsonFile(filePath, data):
+        with open(filePath, 'w', encoding='utf-8') as writefile:
+            json.dump(data, writefile, ensure_ascii=False, indent=None)
+
     def getFileText(text_path, splitText = True):
         url = text_path
         suffix = os.path.splitext(text_path)[-1]
@@ -202,7 +312,7 @@ class FileUtils:
             fullText = []
             for para in doc.paragraphs:
                 fullText.append(para.text)
-            text = '\n'.join(fullText)
+            text = '\n'.join(   )
         elif suffix == ".txt":
             lines = Utils.readFilelines(text_path)
             text = '\n'.join(lines)
@@ -251,25 +361,25 @@ class SaveUtils:
         #baseDir = os.path.join(os.getcwd(), dir)
         return dir
     
-    def saveData(self, subDir, data):
-        if data == '':
+    def saveData(self, subDir, data, ext = 'txt', fileName = ''):
+        subDir = subDir.strip()
+        if data == None or data == '':
             raise 'Invalid Argument'
         
-        isJson = Utils.isJsonString(data)
-        ext = 'txt'
+        isJson = type(data) == dict
         if isJson:
            ext = 'json'
 
         baseDir = self.getBaseDir(subDir)
         dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, ext)
+        fileName = Utils.getUniqueFileNameUnderDirs(dirs, ext, fileName)
 
         filePaths = []
         for dir in dirs:
             filePath = os.path.join(dir, fileName)
             with open(filePath, 'w', encoding='utf-8') as writefile:
                 if isJson:
-                    json.dump(data, writefile, ensure_ascii=False)
+                    json.dump(data, writefile, ensure_ascii=False, indent=None)
                 else:
                     writefile.write(data)
             filePaths.append(filePath)
@@ -304,9 +414,11 @@ class SaveUtils:
         filePaths = []
         for dir in dirs:
             filePath = os.path.join(dir, fileName)
-            urllib.request.urlretrieve(url, filePath)
-            filePaths.append(filePath)
-        print(filePaths)
+            try:
+                urllib.request.urlretrieve(url, filePath)
+                filePaths.append(filePath)
+            except:
+                pass
         return filePaths
 
 

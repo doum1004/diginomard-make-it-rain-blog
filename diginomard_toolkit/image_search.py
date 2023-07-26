@@ -1,14 +1,16 @@
 import os
 import imghdr
+import time
 from bing_image_downloader import downloader
-from .google_api import GoogleImagesSearch
+from .google_api import GoogleSearch
+from .utils import Utils
 from .utils import SaveUtils
 
 
 class ImageSearch:
     outputDir = '__output/image/'
     saveUtils = SaveUtils(outputDir)
-    googleImagesSearch = GoogleImagesSearch()
+    googleSearch = GoogleSearch()
     def __init__(self):
         pass
 
@@ -25,12 +27,18 @@ class ImageSearch:
         return file_list
 
     def getImageFromBing(self, q, nbImage = 10):
-        downloader.download(q, limit=nbImage, output_dir=self.outputDir, adult_filter_off=True, force_replace=False, timeout=60)
-        return self.getFolderFiles(f'/data/image/{q}/')
+        q = Utils.sanitize_folder_name(q)
+        targetDir = os.path.join(self.outputDir, q)
+        Utils.deleteFilesUnderDir(targetDir)
+        downloader.download(q, limit=nbImage, output_dir=self.outputDir, adult_filter_off=True, force_replace=False, timeout=20)
+        return self.getFolderFiles(targetDir) #Utils.renameFiles(self.getFolderFiles(os.path.join(self.outputDir, q)), fileName)
     
     def getImageFromGoogle(self, q, nbImage = 10):
-        result = self.googleImagesSearch.searchImage2(q, nbImage)
+        result = self.googleSearch.searchImage(q, nbImage)
+        fileList = []
         for item in result:
-            self.saveUtils.saveImageFromURL(q, item)
+            files = self.saveUtils.saveImageFromURL(q, item)
+            fileList.extend(files)
+        return fileList
 
         

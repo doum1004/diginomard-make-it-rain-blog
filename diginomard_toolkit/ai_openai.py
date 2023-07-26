@@ -40,13 +40,14 @@ class OpenAI:
             # frequency_penalty = 0.0,
             # presence_penalty = 0.0
         )
+        fullResponse = {}
         responseContents = []
         for choice in response["choices"]:
             responseContents.append(choice["message"]["content"])
-        responseContent = "\n".join(responseContents)
-        self.saveUtils.saveData(keyword, str(messages) + "\n" + responseContent)
-        #print(responseContent)
-        return responseContent
+        fullResponse["messages"] = messages
+        fullResponse["choices"] = responseContents
+        self.saveUtils.saveData(keyword, fullResponse)
+        return responseContents[0]
 
     def _createImage(self, q, nbImage, size=512):
         if (q == ''):
@@ -77,6 +78,7 @@ class OpenAI:
         return openai.chatMessageContents(prompts[0], prompts[1], prompts[2], messages, keyword)
 
     def chatMessageContents(self, systemConent, userConent, assistantContent = '', messages = [], keyword = ''):
+        keyword = keyword.strip()
         if systemConent == '' and userConent == '':
             print('Invalid Prompts')
             return
@@ -97,24 +99,26 @@ class OpenAI:
                 })
         return self._chatMessages(messages, keyword)
     
-    def getSummary(self, text, pauseStep = 10):
+    def getSummary(self, text, pauseStep = 10, pauseMaxToken = 0, breakWhenExceed = True):
         split_texts = Utils.splitText(text)
-        summaries = []
+        summary = ''
         for i , text in enumerate(split_texts):
-            if pauseStep != -1 and i % pauseStep == pauseStep-1 and input('Continue for typing any ? (Too much token spend) : ') == '':
-                break
+            pause = pauseStep != -1 and i % pauseStep == pauseStep - 1
+            pause |= pauseMaxToken != 0 and len(summary) > pauseMaxToken
+            if pause:
+                if not breakWhenExceed or input('Too much token spend. To continue type any and press enter : ') == '':
+                    break
             prompts = PromptGenerator.getSummaryPrompts(text)
             result = self.chatMessageContents(prompts[0], prompts[1], prompts[2], [], keyword='Summary')
             if 'I apologize, but it seems that the provided text is not clear' in result:
                 print(result)
-                if input('Failed to get answer. Continue (press any) ? : '):
+                if input('Failed to get answer. To continue type any and press enter ? : ') == '':
                     break
-            summaries.append(result)
+            summary += result + '\n'
             time.sleep(5) # up to 20 api calls per min
 
-        text_summary = '\r\n'.join(summaries)
-        print(text_summary)
-        return text_summary
+        print(summary)
+        return summary
         
     def createImage(self, q, nbImage = 1, skipDetailing = True, skipGeneratingPrompts = True):
         # get detail description
