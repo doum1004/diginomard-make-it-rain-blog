@@ -9,14 +9,16 @@ from diginomard_toolkit.ai_openai import OpenAI
 from diginomard_toolkit.prompts import PromptGenerator
 from diginomard_toolkit.utils import SaveUtils, Utils, FileUtils
 
-saveUtils = SaveUtils('__output/blog/wurg')
-timeZone = datetime.timezone(datetime.timedelta(hours=9))
+# get current date
+korTimeZone = datetime.timezone(datetime.timedelta(hours=9))
+saveUtils = SaveUtils(f'__output/blog/wurg/{Utils.getCurrentDate()}')
 
 def getDate():
-    #return Utils.getCurrentDate(timeZone)
+    #return Utils.getCurrentDate(korTimeZone)
     return "2023-06-27"
 
-def jsonToMarkdown(jsonData):
+def jsonToMarkdown(jsonData, production):
+    nbMainContentImages = 2 if production else 20
     def getImages(images, hide = False):
         if len(images) == 0:
             return ''
@@ -28,7 +30,7 @@ def jsonToMarkdown(jsonData):
     
     def getDetail(detail):
         content = detail['content']
-        images = getImages(detail['images'][:2])
+        images = getImages(detail['images'][:nbMainContentImages])
         return f'{content}\n\n{images}'
     
     def getMain(main):
@@ -44,8 +46,8 @@ def jsonToMarkdown(jsonData):
     lang = 'en'
     if 'lang' in jsonData:
         lang = jsonData['lang']
-    time = '00' if lang == 'en' else Utils.getTimeBeforeCurrentHour(timeZone)
-    date = f'{getDate()} {time}:00:00 {timeZone}"'
+    time = '00' if lang == 'en' else Utils.getTimeBeforeCurrentHourInTimeZone(korTimeZone)
+    date = f'{getDate()} {time}:00:00 {korTimeZone}"'
     
     # json to markdown like exFormat
     result = []
@@ -56,7 +58,8 @@ def jsonToMarkdown(jsonData):
         result.append(f'description: "{jsonData["description"]}"')
     result.append(f'date: {date}')
     result.append(f'categories: ')
-    result.append(f'image: {jsonData["intro"]["images"][0]}')
+    if len(jsonData["intro"]["images"]) > 0:
+        result.append(f'image: {jsonData["intro"]["images"][0]}')
     result.append(f'uuid: {jsonData["uuid"]}')
     result.append(f'lang: {lang}')
 
@@ -76,16 +79,18 @@ def jsonToMarkdown(jsonData):
     result.append('')
     return '\n'.join(result)
 
-def writeMarkdown(jsonFilePath):
+def writeMarkdown(jsonFilePath, production):
     jsonData = Utils.readJsonFile(jsonFilePath)
     dir = os.path.dirname(jsonFilePath)
     # filename given by date-uuid ofjson and put under dir
     fileName = f'{getDate()}-{jsonData["uuid"]}-{jsonData["lang"]}.md'
     markdownFilePath = os.path.join(dir, fileName)
-    markdownData = jsonToMarkdown(jsonData)
+    markdownData = jsonToMarkdown(jsonData, production)
     FileUtils.writeFile(markdownFilePath, markdownData)
 
 def downloadImage(imageDir, keywords: list, fileName, nbImages = 5):
+    # remove duplicates of keywords
+    keywords = list(dict.fromkeys(keywords))
     baseDir = os.path.dirname(imageDir)
 
     imageSearch = ImageSearch()
@@ -125,9 +130,7 @@ def fillImages(jsonData, baseDir, resetFolder = True):
     jsonData['conclusion']['images'] = []
 
 def fillDraftJson(jsonData, baseDir):
-    # create baseDir if not exist
-    if not os.path.isdir(baseDir):
-        os.makedirs(baseDir)
+    FileUtils.createDir(baseDir)
         
     jsonData['uuid'] = Utils.shortUUID()
     jsonData['lang'] = 'en'
@@ -144,10 +147,12 @@ def writeWURG(keyword):
     i2 = responseText.rfind('}')
     resultJson = responseText[i1:i2+1]
 
-    isValidJson = type(Utils.loadJson(resultJson)) == dict
+    if Utils.isJsonString(resultJson):
+        resultJson = Utils.loadJson(resultJson)
+    isValidJson = type(resultJson) == dict
 
     fileName = 'article'
-    subDir = keyword
+    subDir = FileUtils.fixDirectoryName(keyword)
     baseDir = os.path.join(saveUtils.baseDir, subDir)
 
     if not isValidJson:    
@@ -156,17 +161,25 @@ def writeWURG(keyword):
         prompts = PromptGenerator.getFixJsonPrompts(resultJson)
         resultJson = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
 
-    resultJson = fillDraftJson(resultJson, baseDir)
+    fillDraftJson(resultJson, baseDir)
     jsonFilePath = os.path.join(baseDir, f"{fileName}.json")
     FileUtils.writeFile(jsonFilePath, resultJson)
-    writeMarkdown(jsonFilePath)
+    writeMarkdown(jsonFilePath, False)
+    return resultJson
 
 def fillSEODescription(jsonData):
     if 'description-pass' in jsonData:
         return
     
+    # get intro content, each main headings
+    strData = 'topic: ' + jsonData['topic']
+    strData = 'title: ' + jsonData['title']
+    strData += jsonData['intro']['content']
+    for item in jsonData['main']:
+        strData += 'Heading: ' + item['heading']
+        
+    prompts = PromptGenerator.getSEODescription(strData)
     openai = OpenAI()
-    prompts = PromptGenerator.getSEODescription(jsonData)
     responseText = openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
     jsonData['description'] = responseText
     jsonData['description-pass'] = True
@@ -185,22 +198,46 @@ def writeAllWURGUnderDir(dir):
 
 # jsonPostProcess: removeImageListItemIfNotExist, change folder name as uuid in json, change json file name ()
 def jsonPostProcess(jsonFilePath):
-    def removeList(images):
+    def removeImageItemIfNotExistInFile(dir, images: list):
         # enumerate reverse remove image from list if not exist
         for idx, image in reversed(list(enumerate(images))):
-            if not os.path.isfile(os.path.join(baseDir, image)):
+            if not os.path.isfile(os.path.join(dir, image)):
                 images.pop(idx)
+
+    def deleteFileIfNotExistInList(dir, images: list):
+        imageDir = os.path.join(dir, 'images')
+        for idx, filename in reversed(list(enumerate(os.listdir(imageDir)))):
+            if os.path.isfile(os.path.join(imageDir, filename)):
+                exist = False
+                for image in images:
+                    if filename == os.path.basename(image):
+                        exist = True
+                        break
+                if not exist:
+                    os.remove(os.path.join(imageDir, filename))
+                
 
     # remove image list item if not exist
     jsonData = Utils.readJsonFile(jsonFilePath)
     baseDir = os.path.dirname(jsonFilePath)
     if not jsonData['lang']:
         jsonData['lang'] = 'en'
-    removeList(jsonData['intro']['images'])
+    
+    # get all images
+    removeImageItemIfNotExistInFile(baseDir, jsonData['intro']['images'])
     for item in jsonData['main']:
-        removeList(item['detail']['images'])
-    removeList(jsonData['conclusion']['images'])
-    introImages = jsonData['intro']['images']
+        removeImageItemIfNotExistInFile(baseDir, item['detail']['images'])
+    removeImageItemIfNotExistInFile(baseDir, jsonData['conclusion']['images'])
+
+    images = []
+    images.extend(jsonData['intro']['images'])
+    images.extend(jsonData['conclusion']['images'])
+    for item in jsonData['main']:
+        images.extend(item['detail']['images'])
+    deleteFileIfNotExistInList(baseDir, images)
+
+    introImages = []
+    introImages.extend(jsonData['intro']['images'])
     introImages.extend(jsonData['conclusion']['images'])
     jsonData['intro']['images'] = introImages[:1]
     jsonData['conclusion']['images'] = introImages[1:]
@@ -261,17 +298,45 @@ def runPostProcessUnder(dir, lang, newImages = False):
                 if newImages:
                     fillNewImages(jsonFilePath)
                 jsonFilePath = jsonPostProcess(jsonFilePath)
-                writeMarkdown(jsonFilePath)
+                writeMarkdown(jsonFilePath, True)
                 translatedJsonFilePath = translateAndSaveJson(jsonFilePath, lang)
-                writeMarkdown(translatedJsonFilePath)
+                writeMarkdown(translatedJsonFilePath, True)
             else:
                 print(f'Not found {jsonFilePath}')
 
-#runPostProcessUnder('__output/blog/wurg_production/', 'ko', False)
 #path = 'C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/wurg_done/sa21-05b7b1d1/230718-180949__0__ko.json'
 #path = path.replace('\\', '/')
 #keyword = input('Give keyword : ')
-#keyword = 'how to wake up early'
-#writeAllWURGUnderDir(keyword)
 #fillJsonData('__output/blog/wurg/Best Economy news website/230718-183436__0.json')
 #searchAll('__output/blog/wurg')
+
+def getMainHeadings(jsonData):
+    keywords = []
+    for item in jsonData['main']:
+        keywords.append(item['heading'])
+    return keywords
+
+def writeWURGs(keywords: list, writeHeadings = False):
+    for keyword in keywords:
+        result = writeWURG(keyword)
+        if writeHeadings:
+            headings = getMainHeadings(result)
+            for heading in headings:
+                writeWURG(heading)
+
+def writeMarkdownUnder(dir):
+    for dirname in os.listdir(dir):
+        if os.path.isdir(os.path.join(dir, dirname)):
+            jsonFilePath = os.path.join(dir, dirname, 'article.json')
+            if os.path.isfile(jsonFilePath):
+                writeMarkdown(jsonFilePath, False)
+
+
+jsonFilePath = 'C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/wurg/Thailand Cities/article.json'
+jsonData = Utils.readJsonFile(jsonFilePath)
+writeWURGs(getMainHeadings(jsonData))
+
+# keywords = ['Vietnam Cities']
+# writeWURGs(keywords)
+#writeMarkdownUnder('__output/blog/wurg_prepare')
+#runPostProcessUnder('__output/blog/wurg_production/', 'ko', False)

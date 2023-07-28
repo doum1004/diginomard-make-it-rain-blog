@@ -1,0 +1,12 @@
+{
+	"topic": "",
+	"title": "",
+	"heshtags": "",
+	"scripts": [
+		{"heading": "intro", "content": ""},
+		{"heading": "movie story", "content": ""},
+		{"heading": "fun facts", "content": ""},
+		{"heading": "similar movies", "content": ""},
+		{"heading": "ending", "content": ""}
+	]
+}

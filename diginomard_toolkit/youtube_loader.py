@@ -91,9 +91,8 @@ class YoutubeLoader:
         # 'noplaylist' : True,        # only download single song, not playlist
         #               }
 
-        dirs = self.saveUtils.getDirs()[:1]
-        fileName = self.saveUtils.getUniqueFileNameUnderDirs(dirs, fileName, 'mp4')
-        filePath = os.path.join(dirs[0], fileName)
+        dir = self.saveUtils.getBaseDir()
+        filePath = self.saveUtils.getUniqueFilePath(dir, fileName, 'mp4')
 
         ydl_opts = {
         'format': 'bestvideo+bestaudio/best', # choice of quality +bestaudio[ext=m4a]/best

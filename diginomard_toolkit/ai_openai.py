@@ -31,19 +31,33 @@ class OpenAI:
         print(messages)
         json_str = json.dumps(messages)
         print(f'ChatGPT openai.ChatCompletion is used (token :{OpenAI.getTokenUsage(json_str)})')
-        response = openai.ChatCompletion.create (
-            model= "gpt-3.5-turbo", #gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
-            messages = messages,
-            # temperature = 1,
-            # top_p = 0.95,
-            # # max_tokens=2000,
-            # frequency_penalty = 0.0,
-            # presence_penalty = 0.0
-        )
+        tryCount = 5
+        while tryCount > 0:
+            try:
+                response = openai.ChatCompletion.create (
+                    model= "gpt-3.5-turbo", #gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
+                    messages = messages,
+                    # temperature = 1,
+                    # top_p = 0.95,
+                    # # max_tokens=2000,
+                    # frequency_penalty = 0.0,
+                    # presence_penalty = 0.0
+                )
+                break
+            except:
+                tryCount -= 1
+                if tryCount > 0:
+                    print('ChatGPT openai.ChatCompletion error. Retry after 5 sec')
+                    time.sleep(5)
+                    continue
+                raise Exception('ChatGPT openai.ChatCompletion error. Retry failed')
+
         fullResponse = {}
         responseContents = []
         for choice in response["choices"]:
-            responseContents.append(choice["message"]["content"])
+            content = choice["message"]["content"]
+            content.replace('\"', '')
+            responseContents.append(content)
         fullResponse["messages"] = messages
         fullResponse["choices"] = responseContents
         self.saveUtils.saveData(keyword, fullResponse)
@@ -117,7 +131,7 @@ class OpenAI:
             summary += result + '\n'
             time.sleep(5) # up to 20 api calls per min
 
-        print(summary)
+        print(f'Summary: {summary}')
         return summary
         
     def createImage(self, q, nbImage = 1, skipDetailing = True, skipGeneratingPrompts = True):

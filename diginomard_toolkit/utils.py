@@ -20,13 +20,10 @@ from PIL import Image
 from io import BytesIO
 from pathlib import Path
 
-# if not '_SAVE_GOOLECLOUD_' in os.environ:
-#     os.environ['_SAVE_GOOLECLOUD_'] = '0'
-
 context = ssl.create_default_context(cafile=certifi.where())
 
 class Preference:
-    maxToken = 2500
+    maxToken = 3000
 
 class Utils:
     def __init__(self):
@@ -68,48 +65,12 @@ class Utils:
             return False
         return True
        
-    def fixDirectoryName(path):
-        pattern = r'[<>:"/\\|?*]'
-        new_path = re.sub(pattern, '', path)
-        return new_path
-
-    def getDirs(baseDir):
-        dirs = [f'{baseDir}']
-        # if '_SAVE_GOOLECLOUD_' in os.environ and os.environ['_SAVE_GOOLECLOUD_']:
-        #    dirs.append(os.path.join('/content/drive/MyDrive/diginormad', baseDir))
-        for dir in dirs:
-            Path(dir).mkdir(parents=True, exist_ok=True)
-        return dirs
-
     def getCurrentDate():
         return datetime.datetime.now().strftime("%y%m%d")
     
     def getCurrentTime():
         return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
-    
-    def getUniqueFileNameUnderDirs(dirs, ext, fileName = ''):
-        def getFileName(prefix, i, ext):
-            # assign it to a variable
-            if prefix == None or prefix == '':
-                prefix = Utils.getCurrentTime()
-            # remove space on fileName
-            prefix = prefix.replace(' ', '_')
-            # if i == 0 no suffix
-            suffix = ''
-            if i != 0:
-                suffix = f'_{i}'
-            return f'{prefix}{suffix}.{ext}'
         
-        i = 0
-        newFileName = getFileName(fileName, i, ext)
-        for dir in dirs:
-            filePath = os.path.join(dir, newFileName)
-            while os.path.exists(filePath):
-                i += 1
-                newFileName = getFileName(fileName, i, ext)
-                filePath = os.path.join(dir, newFileName)
-        return newFileName
-    
     def splitText(text, max_tokens = Preference.maxToken):
         tokens = text.split()
         split_texts = []
@@ -142,28 +103,28 @@ class Utils:
         return "\n".join(result)
 
     # get unique file name regardless of extension
-    def getUniqueFileName(dir, name, ext, i = 0):
-        while True:
-            checkExts = ['.jpg', '.jpeg', 'png']
-            if not ext in checkExts:
-                checkExts.append(ext)
-                
-            # check all ext that all name are not exist
-            exist = False
-            for checkExt in checkExts:
-                if i > 0:
-                    newNameWithoutExt = f'{name}_{i}'
-                else:
-                    newNameWithoutExt = f'{name}'
-                newPath = os.path.join(dir, f'{newNameWithoutExt}{checkExt}')
-                if os.path.exists(newPath):
-                    exist = True
-                    break
-            if not exist:
-                break
+    def getUniqueFilePath(dir, name, ext, i = 0):
+        # get all files under dir and get file name without extension
+        fileNames = []
+        if os.path.exists(dir):
+            files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
+            fileNames = [os.path.splitext(f)[0] for f in files]
+
+        if name == None or name == '':
+            name = Utils.getCurrentTime()
+        name = name.replace(' ', '_')
+    
+        fileName = name
+        if i > 0:
+            fileName = f'{name}_{i}'
+        # compare this name with name param
+        if fileName in fileNames:
+            # if exist then add number suffix
             i += 1
-        newPath = os.path.join(dir, f'{newNameWithoutExt}{ext}')
-        return newPath
+            return Utils.getUniqueFilePath(dir, name, ext, i)
+        else:
+            FileUtils.createDir(dir)
+            return os.path.join(dir, f'{fileName}{ext}')
     
     # rename files with prefix if exist then add number suffix
     def renameFiles(files, fileName):
@@ -175,47 +136,55 @@ class Utils:
             dir = os.path.dirname(file)
             ext = os.path.splitext(file)[-1]
 
-            newName = Utils.getUniqueFileName(dir, fileName, ext)
-            os.rename(file, newName)
-            newNames.append(newName)
+            newFilePath = Utils.getUniqueFilePath(dir, fileName, ext)
+            os.rename(file, newFilePath)
+            newNames.append(newFilePath)
         return newNames
-        
-    def moveFiles(files, dir, newNameWithoutExt = '', i = 0):
+    
+    def copyFiles(files, targetDir, suffixIndex = 0):
         newNames = []
-        os.makedirs(dir, exist_ok=True)
+        for file in files:
+            if not os.path.exists(file):
+                continue
+            filename = os.path.basename(file)
+            ext = os.path.splitext(filename)[-1]
+            newFilePath = Utils.getUniqueFilePath(targetDir, filename, ext, suffixIndex)
+            shutil.copy(file, newFilePath)
+            newNames.append(newFilePath)
+        return newNames
+
+    def moveFiles(files, dir, newNameWithoutExt = '', suffixIndex = 0):
+        newNames = []
+        FileUtils.createDir(dir)
         for source in files:
+            if not os.path.exists(source):
+                continue
             filename = os.path.basename(source)               
             # get ext and name
             nameWihtoutExt, ext = os.path.splitext(filename)
             if newNameWithoutExt != '':
                 nameWihtoutExt = newNameWithoutExt
-            dest = Utils.getUniqueFileName(dir, nameWihtoutExt, ext, i)
+            dest = Utils.getUniqueFilePath(dir, nameWihtoutExt, ext, suffixIndex)
             shutil.move(source, dest)
             newNames.append(dest)
         return newNames
     
-    def sanitize_folder_name(folder_name):
-        # Define a regex pattern to remove invalid characters from the folder name
-        valid_chars = '-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-        sanitized_name = ''.join(c for c in folder_name if c in valid_chars)
-        return sanitized_name
-
     def deleteFilesUnderDir(dir):
         try:
             if os.path.exists(dir):
                 shutil.rmtree(dir)
         except:
             pass
-        os.makedirs(dir, exist_ok=True)
+        FileUtils.createDir(dir)
 
     # getCurrentDate(yyyy-mm-dd) depending on timezone (default Korea)
     def getCurrentDate(timeZone = datetime.timezone(datetime.timedelta(hours=9))):        
         return datetime.datetime.now(timeZone).strftime("%Y-%m-%d")
     
     # get RandomHour before current hour depending on timezone
-    def getTimeBeforeCurrentHour(timeZone = datetime.timezone(datetime.timedelta(hours=9))):
+    def getTimeBeforeCurrentHourInTimeZone(timeZone: datetime.timezone):
         currentHour = datetime.datetime.now(timeZone).hour
-        randHour = np.random.randint(currentHour)
+        randHour = currentHour if currentHour == 0 else np.random.randint(currentHour)
         # return '##:00:00 GMT+9(depending on timezone)
         return f'{randHour:02d}'
 
@@ -274,7 +243,35 @@ class FileUtils:
     def __init__(self):
         pass
 
+    def isValidFilePath(filePath):
+        # split first drive path
+        drive, path = os.path.splitdrive(filePath)
+        pattern = r'[<>:"|?*]'
+        if re.search(pattern, path):
+            return False
+        return True
+    
+    def fixDirectoryName(path):
+        pattern = r'[<>:"/\\|?*]'
+        new_path = re.sub(pattern, '', path)
+        return new_path
+
+    def fixDirectoryPath(path):
+        pattern = r'[<>:"|?*]'
+        new_path = re.sub(pattern, '', path)
+        return new_path
+
+    def createDir(dir):
+        if FileUtils.isValidFilePath(dir) == False:
+            raise ValueError("Invalid dir path!")
+        
+        os.makedirs(dir, exist_ok=True)
+    
     def writeFile(filePath, data):
+        if FileUtils.isValidFilePath(filePath) == False:
+            raise ValueError("Invalid file name!")
+
+        FileUtils.createDir(os.path.dirname(filePath))
         # get extension
         ext = os.path.splitext(filePath)[-1]
         with open(filePath, 'w', encoding='utf-8') as writefile:
@@ -357,7 +354,7 @@ class SaveUtils:
         self.baseDir = baseDir
 
     def getBaseDir(self, subDir = ''):
-        dir = os.path.join(self.baseDir, Utils.fixDirectoryName(subDir))
+        dir = os.path.join(self.baseDir, FileUtils.fixDirectoryName(subDir))
         #baseDir = os.path.join(os.getcwd(), dir)
         return dir
     
@@ -371,72 +368,52 @@ class SaveUtils:
            ext = 'json'
 
         baseDir = self.getBaseDir(subDir)
-        dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, ext, fileName)
+        filePath = Utils.getUniqueFilePath(baseDir, fileName, ext)
+        
+        with open(filePath, 'w', encoding='utf-8') as writefile:
+            if isJson:
+                json.dump(data, writefile, ensure_ascii=False, indent=None)
+            else:
+                writefile.write(data)
 
-        filePaths = []
-        for dir in dirs:
-            filePath = os.path.join(dir, fileName)
-            with open(filePath, 'w', encoding='utf-8') as writefile:
-                if isJson:
-                    json.dump(data, writefile, ensure_ascii=False, indent=None)
-                else:
-                    writefile.write(data)
-            filePaths.append(filePath)
-        print(filePaths)
-        return filePaths
+        return filePath
 
     def saveAudio(self, subDir, data):
         if data == '':
             raise 'Invalid Argument'
         
         baseDir = self.getBaseDir(subDir)
-        dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, 'wav')
+        filePath = Utils.getUniqueFilePath(baseDir, '', 'wav')
 
-        filePaths = []
-        for dir in dirs:
-            filePath = os.path.join(dir, fileName)
-            filePaths.append(filePath)
-            with open(filePath, "wb") as f:
-                f.write(data)
-        print(filePaths)
-        return filePaths
+        with open(filePath, "wb") as f:
+            f.write(data)
+            
+        return filePath
     
     def saveImageFromURL(self, subDir, url):
         if url == '':
             return
         
         baseDir = self.getBaseDir(subDir)
-        dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, 'jpg')
+        filePath = Utils.getUniqueFilePath(baseDir, '', 'jpg')
 
-        filePaths = []
-        for dir in dirs:
-            filePath = os.path.join(dir, fileName)
-            try:
-                urllib.request.urlretrieve(url, filePath)
-                filePaths.append(filePath)
-            except:
-                pass
-        return filePaths
+        try:
+            urllib.request.urlretrieve(url, filePath)
+        except:
+            pass
+        return filePath
 
 
     def saveImageFromBase64(self, subDir, base64Code):
-        if fileName == '' or fileName == '':
+        if base64Code == None or base64Code == '':
             return
         
         image = ImageUtils.getImageFromBase64(base64Code)
 
         baseDir = self.getBaseDir(subDir)
-        dirs = Utils.getDirs(baseDir)
-        fileName = Utils.getUniqueFileNameUnderDirs(dirs, 'jpg')
+        filePath = Utils.getUniqueFilePath(baseDir, '', 'jpg')
 
-        filePaths = []
-        for dir in dirs:
-            filePath = os.path.join(dir, fileName)
-            cv2.imwrite(filePath, image)
-            filePaths.append(filePath)
-        print(filePaths)
-        return filePaths
+        cv2.imwrite(filePath, image)
+
+        return filePath
     

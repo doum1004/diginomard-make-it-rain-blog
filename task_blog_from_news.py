@@ -44,10 +44,11 @@ def getNewsBlogPost():
         
         dir = '__output/blog/news/' + Utils.getCurrentDate()
         saveUtils = SaveUtils(dir)
-        saveUtils.saveData(keyword, resultEng)
-        paths = saveUtils.saveData(keyword, resultKor)
+        subDir = FileUtils.fixDirectoryName(keyword)
+        saveUtils.saveData(subDir, resultEng)
+        path = saveUtils.saveData(subDir, resultKor)
 
-        dir = os.path.dirname(paths[0])
+        dir = os.path.dirname(path)
 
         imageSearch = ImageSearch()
         images = imageSearch.getImageFromGoogle(f'{keyword}', 10)

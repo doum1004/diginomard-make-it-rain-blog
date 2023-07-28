@@ -1,0 +1,119 @@
+<!-- Display input better for multi line and long text -->
+<!-- Display Images and Add Button that server could delete images if they don't need -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Data</title>
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/main.css') }}">
+    <style>
+    </style>
+    <script>
+        function openModal(imageSrc) {
+            const modal = document.querySelector('.modal');
+            const modalImage = document.getElementById('modalImage');
+
+            modalImage.src = imageSrc;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.modal');
+            modal.style.display = 'none';
+        }
+
+        function convertToFormattedJson(jsonStr) {
+            try {
+                const validJsonStr = jsonStr.replace(/'/g, '"');
+                // Convert the JSON string to a JavaScript object
+                const jsonData = JSON.parse(validJsonStr);
+                // Format the JSON object with indentation
+                const formattedJsonStr = JSON.stringify(jsonData, null, 2);
+                // Display the formatted JSON object within the pre element
+                preElement.textContent = formattedJsonStr;
+            } catch (error) {
+                console.error('Invalid JSON data:', error);
+                console.error('JSON Data:', jsonStr);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const preElement = document.getElementById("json_display");
+            // Check if the pre element exists before proceeding
+            if (preElement === null)
+                return;
+
+            const jsonStr = preElement.textContent.trim();
+            preElement.textContent = convertToFormattedJson(jsonStr);
+        });
+    </script>
+
+
+
+
+</head>
+<body>
+    <h1>Edit JSON Data:</h1>
+    <form method="post">
+        <!-- display this json template
+        {"topic": "Best cities to live in South East Asia", "title": "Top 3 Cities to Live in South East Asia", "uuid": "ffa8875e", "lang": "en", "intro": {"content": "South East Asia boasts a plethora of vibrant cities, but here are the top three cities that stand out as the best places to live in the region.", "images": ["images/intro_2.jpg"]}, "main": [{"heading": "1. Singapore", "tag": "The Garden City", "detail": {"content": "With its excellent infrastructure, low crime rates, and booming economy, Singapore consistently ranks as one of the best cities to live in South East Asia. The city-state offers a high standard of living, world-class healthcare, and a clean and safe environment. Additionally, Singapore is known for its multiculturalism, creating a diverse and inclusive society.", "images": ["images/main1_1.jpg", "images/main1_5.jpg", "images/main1_6.jpg", "images/main1_8.jpg", "images/main1_10.jpeg"]}}, {"heading": "2. Kuala Lumpur", "tag": "The Capital of Malaysia", "detail": {"content": "Kuala Lumpur, the capital of Malaysia, is a melting pot of cultures and a thriving metropolis. It offers a combination of modern amenities and natural beauty, with its iconic Petronas Twin Towers dominating the skyline. Kuala Lumpur provides a great work-life balance, affordable cost of living, and excellent food scene. It also has a well-developed public transportation system, making it easy to navigate the city.", "images": ["images/main2_1.jpg", "images/main2_3.jpg", "images/main2_5.jpg", "images/main2_11.jpg", "images/main2_14.jpg", "images/main2_19.png"]}}, {"heading": "3. Bangkok", "tag": "The Vibrant Cultural Hub", "detail": {"content": "Known for its bustling street markets, ornate temples, and vibrant nightlife, Bangkok is a city that never sleeps. This vibrant capital of Thailand offers a mix of tradition and modernity, with a wide range of entertainment options and a rich cultural heritage. Bangkok is also known for its affordable cost of living, delicious street food, and welcoming locals.", "images": ["images/main3_1.jpg", "images/main3_3.jpg", "images/main3_4.jpg", "images/main3_4.png", "images/main3_6.jpg", "images/main3_7.jpg"]}}], "conclusion": {"content": "These three cities, Singapore, Kuala Lumpur, and Bangkok, offer unique experiences and opportunities to residents, making them the top choices for those seeking the best cities to live in South East Asia.", "images": ["images/intro_4.jpg", "images/intro_6.jpg"]}} -->
+        
+        <label for="name">Topic:</label>
+        <textarea id="topic" name="topic" rows="1">{{ json_data['topic'] }}</textarea><br>
+
+        <label for="name">Title:</label>
+        <textarea id="title" name="title" rows="1">{{ json_data['title'] }}</textarea><br>
+
+        <label for="name">UUID:</label>
+        <textarea id="uuid" name="uuid" rows="1">{{ json_data['uuid'] }}</textarea><br>
+
+        <label for="name">Language:</label>
+        <textarea id="lang" name="lang" rows="1">{{ json_data['lang'] }}</textarea><br>
+
+        <label for="name">Intro:</label>
+        <textarea id="intro" name="intro" rows="5">{{ json_data['intro']['content'] }}</textarea><br>
+
+        <label for="name">Images:</label>
+        {% set image_list = json_data['intro']['images'] %}
+        {% set image_list = json_data['intro']['images'] %}
+        {% include 'gallery_template.html' %}
+        <br>
+
+         <!-- Display Main -->
+        {% for main in json_data['main'] %}
+            <label for="name">Heading:</label>
+            <textarea id="heading" name="heading" rows="1">{{ main['heading'] }}</textarea><br>
+
+            <label for="name">Tag:</label>
+            <textarea id="tag" name="tag" rows="1">{{ main['tag'] }}</textarea><br>
+
+            <label for="name">Detail:</label>
+            <textarea id="detail" name="detail" rows="5">{{ main['detail']['content'] }}</textarea><br>
+
+            <label for="name">Images:</label>
+            {% set image_list = main['detail']['images'] %}
+            {% include 'gallery_template.html' %}
+            <br>
+        {% endfor %}
+
+        <label for="name">Conclusion:</label>
+        <textarea id="conclusion" name="conclusion" rows="5">{{ json_data['conclusion']['content'] }}</textarea><br>
+
+        <label for="name">Images:</label>
+        {% set image_list = json_data['conclusion']['images'] %}
+        {% include 'gallery_template.html' %}
+
+        <p>
+            <input type="submit" value="Save">
+        </p>        
+    </form>
+
+    <h1>JSON Data:</h1>
+    <pre id="json_display" class="json-viewer">{{ json_data | safe }}</pre>
+    
+    <!-- Full-size Image Modal -->
+    <div class="modal" onclick="closeModal()">
+        <img id="modalImage" src="" alt="Full-size Image">
+    </div>
+</body>
+</html>

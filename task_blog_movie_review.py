@@ -1,6 +1,9 @@
+import datetime
+import json
 import os
+import re
 import time
-from diginomard_toolkit.google_api import GoogleSearch
+from diginomard_toolkit.google_api import GoogleSearch, GoogleTranslateion
 from diginomard_toolkit.google_trend import GoogleTrend
 from diginomard_toolkit.news import News
 from diginomard_toolkit.ai_openai import OpenAI
@@ -10,6 +13,71 @@ from diginomard_toolkit.utils import Preference, SaveUtils, Utils, FileUtils
 from diginomard_toolkit.wiki import Wiki
 
 googleSearch = GoogleSearch()
+
+korTimeZone = datetime.timezone(datetime.timedelta(hours=9))
+saveUtils = SaveUtils(f'__output/blog/movie/{Utils.getCurrentDate()}')
+
+def getDate():
+    return Utils.getCurrentDate()
+
+def jsonToMarkdown(jsonData):
+    def getImages(images, alt, hide = False):
+        if len(images) == 0:
+            return ''
+        result = []
+        for image in images:
+            alt = 'hide' if hide else ''
+            result.append(f'![{alt}]({image})')
+        return '\n'.join(result)
+    
+    lang = 'en'
+    if 'lang' in jsonData:
+        lang = jsonData['lang']
+    time = '00' if lang == 'en' else Utils.getTimeBeforeCurrentHourInTimeZone(korTimeZone)
+    date = f'{getDate()} {time}:00:00 {korTimeZone}"'
+    
+    # json to markdown like exFormat
+    result = []
+    result.append('---')
+    result.append(f'layout: post')
+    result.append(f'title: "{jsonData["title"]}"')
+    if 'description' in jsonData:
+        result.append(f'description: "{jsonData["description"]}"')
+    if 'hashtags' in jsonData:
+        result.append(f'tags: "{jsonData["hashtags"]}"')
+    result.append(f'date: {date}')
+    result.append(f'categories: ')
+    if len(jsonData["images"]) > 0:
+        result.append(f'image: {jsonData["images"][0]}')
+    if 'uuid' in jsonData:
+        result.append(f'uuid: {jsonData["uuid"]}')
+    if 'lang' in jsonData:
+        result.append(f'lang: {lang}')
+
+    result.append('---')
+    result.append('')
+    
+    for item in jsonData['scripts']:
+        if item["content"] == "":
+            continue
+        result.append(f'## {item["heading"]}')
+        result.append(item["content"])
+        result.append('')
+        result.append('')
+
+    result.append(getImages(jsonData["images"], jsonData["topic"]))
+
+    return '\n'.join(result)
+
+def writeMarkdown(jsonFilePath):
+    jsonData = Utils.readJsonFile(jsonFilePath)
+    dir = os.path.dirname(jsonFilePath)
+    # filename given by date-uuid ofjson and put under dir
+    fileName = f'{getDate()}-{jsonData["uuid"]}-{jsonData["lang"]}.md'
+    markdownFilePath = os.path.join(dir, fileName)
+    markdownData = jsonToMarkdown(jsonData)
+    FileUtils.writeFile(markdownFilePath, markdownData)
+
 def searchWiki(q):
     result = googleSearch.search(f'wikipedia {q}')
     wiki = Wiki()
@@ -25,41 +93,98 @@ def searchWiki(q):
     wikiText.strip()
     return wikiText
 
-def getMovieBlogPost(text, keyword):
+def writeInTranslation(jsonFilePath, targetLang):
+    gTranslator = GoogleTranslateion()
+    jsonData = Utils.readJsonFile(jsonFilePath)
+    jsonData['lang'] = targetLang
+    # translate only 'topic' 'title' 'intro.content' 'main[].heading' 'main[].detail.content' 'conclusion.content'
+    jsonData['topic'] = gTranslator.translate(jsonData['topic'], targetLang)
+    jsonData['title'] = gTranslator.translate(jsonData['title'], targetLang)
+    if 'description' in jsonData:
+        jsonData['description'] = gTranslator.translate(jsonData['description'], targetLang)
+    if 'hashtags' in jsonData:
+        jsonData['hashtags'] = gTranslator.translate(jsonData['hashtags'], targetLang)
+    for item in jsonData['scripts']:
+        item['heading'] = gTranslator.translate(item['heading'], targetLang)
+        item['content'] = gTranslator.translate(item['content'], targetLang)
+
+    # add lang suffix to json file name
+    jsonFilePath = os.path.splitext(jsonFilePath)[0] + f'-{targetLang}.json'
+    FileUtils.writeFile(jsonFilePath, jsonData)
+
+    writeMarkdown(jsonFilePath)
+
+def writeMovieBlogPost(text, keyword):
     print(f'len({len(text)}) {text[:50]}')
     if len(text) < 100:
         return
     input('Continue ? ')
+    
     openai = OpenAI()
     while len(text) > Preference.maxToken:
         text = openai.getSummary(text)
-    prompts = PromptGenerator.getMovieBlogPostPrompts(text)
-    resultEng = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-    print(resultEng)
+
+    prompts = PromptGenerator.getMovieBlogPostPrompts(keyword, text)
+    responseText = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
     
-    prompts = PromptGenerator.getTranslatePrompts(resultEng)
-    resultKor = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-    print(resultKor)
+    i1 = responseText.find('{')
+    i2 = responseText.rfind('}')
+    resultJson = responseText[i1:i2+1]
 
-    # add additional info
-    links = "\n\n\n\n"
-    images = googleSearch.searchImage(f'{q}', 5)
-    links += "\n".join(images)
-    link = googleSearch.search(f'justwatch {q}', 1)
-    links += "\n" + link[0]
-    resultEng += links
-    resultKor += links
+    if Utils.isJsonString(resultJson):
+        resultJson = Utils.loadJson(resultJson)
+    isValidJson = type(resultJson) == dict
 
-    saveUtils = SaveUtils('__output/blog/movie')
-    saveUtils.saveData(q, resultEng)
-    saveUtils.saveData(q, resultKor)
-    
-    return resultKor
+    subDir = FileUtils.fixDirectoryName(keyword)
+    if not isValidJson:    
+        FileUtils.writeFile(os.path.join(saveUtils.baseDir, subDir, f"article_invalid.json"), resultJson)
+        print('-- Fix Json --')        
+        prompts = PromptGenerator.getFixJsonPrompts(resultJson)
+        resultJson = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+        if Utils.isJsonString(resultJson):
+            resultJson = Utils.loadJson(resultJson)
+        isValidJson = type(resultJson) == dict
+        if not isValidJson:
+            raise Exception('Invalid Json')
+
+    resultJson['uuid'] = Utils.shortUUID()
+    resultJson['lang'] = 'en'
+    images = googleSearch.searchImage(f'{keyword}', 10)
+    resultJson['images'] = images
+
+    link = googleSearch.search(f'justwatch {keyword}', 1)
+    resultJson['links'] = link
+
+    jsonFilePath = os.path.join(saveUtils.baseDir, subDir, f"article.json")
+    FileUtils.writeFile(jsonFilePath, resultJson)    
+    writeMarkdown(jsonFilePath)
+
+    writeInTranslation(jsonFilePath, 'ko')
 
 
-q = '용쟁호투'
+# load text file 'C:\Workspace\Personal\diginomard-make-it-rain-blog\__output\blog\movie\2023-07-29\카메라를 멈추면 안 돼\article copy.json'
+
+
+# def escape_inner_quotes(match):
+#     return match.group(0).replace('"', '\\"')
+
+# fixed_json_string = re.sub(r'(?<=":[\s]*")([^"]+)(?=["\s]*[,}])', escape_inner_quotes, txt)
+
+# if Utils.isJsonString(fixed_json_string):
+#     resultJson = Utils.loadJson(fixed_json_string)
+# isValidJson = type(resultJson) == dict
+# if not isValidJson:
+#     input('Invalid Json. Continue ? ')
+
+q = '영화 바비'
 text = searchWiki(q)
-post = getMovieBlogPost(text, q)
+writeMovieBlogPost(text, q)
+
+# txt = "Donnie Brasco is a crime drama film based on the true story of FBI agent Joseph D. Pistone, who infiltrated the Bonanno crime family in New York City during the 1970s. Under the alias Donnie Brasco, Pistone befriends aging mobster Lefty Ruggiero and gains his trust. As Donnie goes deeper into the Mafia, he struggles with his dual identity and the risk of getting his friend killed. The film was released in 1997 and received positive reviews from critics. It was a box office success and was nominated for an Academy Award for Best Adapted Screenplay.\nThe summary provided above appears to be cut off and incomplete.\nDonnie Brasco is a crime film released in 1997. It is based on the true story of undercover FBI agent Joseph D. Pistone, who infiltrates the Mafia. The film was directed by Mike Newell and stars Al Pacino and Johnny Depp in the lead roles. It received positive reviews from critics and was a commercial success, earning over $124 million worldwide.\nThe film \"Donnie Brasco\" received positive reviews from critics. They praised the performances of Al Pacino and Johnny Depp, with Depp's acting being particularly hailed as \"sensational\" and \"believable.\" The screenplay and the portrayal of the teacher-student relationship between the two main characters were also praised. The film was described as a gripping mafia thriller and one of Pacino's best performances. The final scene featuring Pacino was noted for its emotional impact. Overall, critics considered \"Donnie Brasco\" to be a terrific movie."
+# writeMovieBlogPost(txt, q)
+
+#writeMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json')
+#writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json', 'ko')
 
 # *정영진 - 마다가스카의 펭귄 (2014년作/미국/애니메이션/에릭 다넬, 시몬 J.스미스 감독)
 # *장규성 – 리바운드 (2023년作/한국/드라마/장항준 감독) 
