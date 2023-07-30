@@ -1,3 +1,4 @@
+import imghdr
 import shutil
 import time
 import uuid
@@ -15,6 +16,7 @@ import certifi
 import fitz
 import docx
 import validators
+import posixpath
 from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
@@ -24,6 +26,7 @@ context = ssl.create_default_context(cafile=certifi.where())
 
 class Preference:
     maxToken = 3000
+
 
 class Utils:
     def __init__(self):
@@ -187,8 +190,21 @@ class Utils:
         randHour = currentHour if currentHour == 0 else np.random.randint(currentHour)
         # return '##:00:00 GMT+9(depending on timezone)
         return f'{randHour:02d}'
+    
+    def isUrl(url):
+        return validators.url(url)
 
 class HTMLUtils:
+    #headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",}
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) ' 
+      'AppleWebKit/537.11 (KHTML, like Gecko) '
+      'Chrome/23.0.1271.64 Safari/537.11',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+      'Accept-Encoding': 'none',
+      'Accept-Language': 'en-US,en;q=0.8',
+      'Connection': 'keep-alive'}
+
     def __init__(self):
         pass
     
@@ -288,8 +304,8 @@ class FileUtils:
         url = text_path
         suffix = os.path.splitext(text_path)[-1]
         if validators.url(url):
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",}
-            response = requests.get(url, headers=headers)
+            #headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",}
+            response = requests.get(url, headers=HTMLUtils.headers)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.content, "html.parser")
                 text = soup.get_text()
@@ -318,7 +334,19 @@ class FileUtils:
         if splitText:
             text = " ".join(text.split())
         return text
-
+    
+    def getRelPath(baseDir, filePath):
+        return os.path.relpath(filePath, baseDir).replace('\\', '/')
+        # replace imagePaths in relative path from baseDir
+        # relPaths = []
+        # for path in imagePaths:
+        #     relPath = path.replace(baseDir, '')
+        #     # replace \\ to /
+        #     relPath = relPath.replace('\\', '/')
+        #     if relPath[0] == '/':
+        #         relPath = relPath[1:]
+        #     relPaths.append(relPath)        
+        # return relPaths
 
 class ImageUtils:
     def __init__(self):
@@ -347,6 +375,33 @@ class ImageUtils:
             image_data = file.read()
             base64_data = base64.b64encode(image_data).decode("utf-8")
         return base64_data
+    
+    def downloadImage(url, dir, fileNameWithoutExtension = ''):
+        # takeUrlPath before ? starts
+        url = url.split('?')[0]
+        path = urllib.parse.urlsplit(url).path
+        fileName = posixpath.basename(path).split('?')[0]
+        # get fileName without extension
+        i = 1
+        if fileNameWithoutExtension == '':
+            fileNameWithoutExtension = os.path.splitext(fileName)[0]
+            i = 0
+        ext = fileName.split(".")[-1]
+
+        filePath = Utils.getUniqueFilePath(dir, fileNameWithoutExtension, "." + ext, i)
+        print(filePath)
+        FileUtils.createDir(os.path.dirname(filePath))
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                urllib.request.urlretrieve(url, filePath)
+        except Exception as e:
+            print(e)
+            pass
+        if not os.path.exists(filePath):            
+            print('[Error]Failed to download image {}\n'.format(url))
+            filePath = ''
+        return filePath
 
 class SaveUtils:
     baseDir = ''

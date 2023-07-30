@@ -1,13 +1,17 @@
 import os
 import requests
 import base64
+import html
 from googleapiclient.discovery import build
 from google_images_search import GoogleImagesSearch
-from .utils import SaveUtils
 from google.cloud import translate_v3 as translate
 from googletrans import Translator
-import html
 
+try:
+    from  utils import SaveUtils
+except ImportError:  # Python 3
+    from .utils import SaveUtils
+    
 class GoogleSearch:
     api_key = os.getenv("GOOGLE_API_KEY")
     custom_search_cx = os.getenv("GOOGLE_CUSTOM_SEARCH_CX")

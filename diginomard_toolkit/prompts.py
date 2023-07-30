@@ -21,10 +21,16 @@ class PromptGenerator:
     
     def getSEODescription(data):
         systemContent = f""
-        userContent = "Give one paragraph blog summary for SEO-description (must be less than 100 characters, don't put emoji). Put hash 8 tags after. (must be 8 hash tags)"
+        userContent = "Write a blog 120 charaters blog description for search engine optimization. It has to be one line. Don't use special charaters."
         assistantContent = f"{data[:Preference.maxToken]}"
         return systemContent, userContent, assistantContent
 
+    def getHashTags(data):
+        systemContent = f""
+        userContent = "Give 5 hash tags"
+        assistantContent = f"{data[:Preference.maxToken]}"
+        return systemContent, userContent, assistantContent
+    
     def getMovieBlogPostPrompts(keyword, summary):
         keyword = keyword.strip()
         systemContent = f"You are an movie review writer that only speaks Json. Do not write normal text. Write all in one line. Use single quote instead of double quote in values."

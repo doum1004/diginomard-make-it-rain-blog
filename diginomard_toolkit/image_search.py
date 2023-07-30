@@ -1,11 +1,21 @@
 import os
 import imghdr
+import re
 import time
+import urllib.request
+import urllib
 from bing_image_downloader import downloader
-from .google_api import GoogleSearch
-from .utils import FileUtils, Utils
-from .utils import SaveUtils
+import requests
 
+try:
+    from google_api import GoogleSearch
+except ImportError:  # Python 3
+    from .google_api import GoogleSearch
+
+try:
+    from  utils import FileUtils, Utils, SaveUtils, HTMLUtils
+except ImportError:  # Python 3
+    from .utils import FileUtils, Utils, SaveUtils, HTMLUtils
 
 class ImageSearch:
     outputDir = '__output/image/'
@@ -41,4 +51,48 @@ class ImageSearch:
             fileList.append(file)
         return fileList
 
-        
+    def get_filter(self, shorthand):
+            if shorthand == "line" or shorthand == "linedrawing":
+                return "+filterui:photo-linedrawing"
+            elif shorthand == "photo":
+                return "+filterui:photo-photo"
+            elif shorthand == "clipart":
+                return "+filterui:photo-clipart"
+            elif shorthand == "gif" or shorthand == "animatedgif":
+                return "+filterui:photo-animatedgif"
+            elif shorthand == "transparent":
+                return "+filterui:photo-transparent"
+            else:
+                return ""
+            
+    def getImageFromBingSearch(self, q, nbImage):
+        page_counter = 0
+        adult = 'off'
+        results = []
+        filter = ""
+        seen = set()
+        while True:
+            page_counter += 1
+            request_url = 'https://www.bing.com/images/async?q=' + urllib.parse.quote_plus(q) \
+                    + '&first=' + str(page_counter) + '&count=' + str(nbImage) \
+                    + '&adlt=' + adult + '&qft=' + ('' if filter is None else self.get_filter(filter))
+            request = urllib.request.Request(request_url, None, headers=HTMLUtils.headers)
+            response = urllib.request.urlopen(request)
+            html = response.read().decode('utf8')
+            if html ==  "":
+                print("[%] No more images are available")
+                break
+            links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
+            for link in links:
+                if link in seen:
+                    continue
+
+                response = requests.get(link, headers=HTMLUtils.headers)
+                if response.status_code != 200:
+                    continue
+                
+                results.append(link)
+                seen.add(link)
+                if nbImage == len(results):
+                    break
+        return results
