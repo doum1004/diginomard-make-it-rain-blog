@@ -8,7 +8,7 @@ from google.cloud import translate_v3 as translate
 from googletrans import Translator
 
 try:
-    from  utils import SaveUtils
+    from utils import SaveUtils
 except ImportError:  # Python 3
     from .utils import SaveUtils
     
@@ -34,7 +34,7 @@ class GoogleSearch:
 
     def search(self, query, num = 10, itemKey = 'link'):
         return self._search(query, '', num, itemKey)
-    
+        
     def searchImage(self, query, num = 10):
         return self._search(query, 'image', num)
     
@@ -51,6 +51,63 @@ class GoogleSearch:
         links = []
         for image in gis.results():
             links.append(image.url)
+        return links
+
+    def _getSecFromDuration(self, duration):
+        # duration format (such as PT13M3S, PT40S), convert it to sec
+        sec = 0
+        if duration[0] == 'P':
+            duration = duration[2:]
+        if duration[0] == 'T':
+            duration = duration[1:]
+        if duration.find('H') > 0:
+            hour = duration.split('H')[0]
+            duration = duration.split('H')[1]
+            sec += int(hour) * 3600
+        if duration.find('M') > 0:
+            min = duration.split('M')[0]
+            duration = duration.split('M')[1]
+            sec += int(min) * 60
+        if duration.find('S') > 0:
+            sec += int(duration.split('S')[0])
+        return sec - 1
+
+    def searchVideo(self, query, num=10, cutDuration = 0):
+        youtube = build("youtube", "v3", developerKey=self.api_key)
+
+        response = youtube.search().list(q=query, part='id,snippet',
+                                         type='video',
+                                         videoEmbeddable="true",
+                                         maxResults=num).execute()
+
+        # get duration time
+        for video in response['items'][:num]:
+            id = video['id']['videoId']
+            video_response = youtube.videos().list(id=id, part='contentDetails').execute()
+            video['duration'] = video_response['items'][0]['contentDetails']['duration']        
+
+        # Print out the first few video titles
+        links = []
+        for video in response['items'][:num]:
+            title = video['snippet']['title']
+            id = video['id']['videoId']
+            duration = self._getSecFromDuration(video['duration'])
+            link = f"https://www.youtube.com/embed/{id}"
+            print(f"{title}, {id}, {duration} sec: {link}")
+
+            if cutDuration > 0:
+                offsetSec = 1
+                maxCuts = 10
+                nbCuts = max(int((cutDuration + offsetSec) / duration), maxCuts)
+                for i in range(nbCuts):
+                    start = int(i * (duration / nbCuts))
+                    end = start + cutDuration
+                    if end > duration:
+                        end = duration
+                    cutLink = f"{link}?start={start}&end={end}"
+                    links.append(cutLink)
+            else:
+                links.append(link)
         return links
 
 class GoogleVoiceService:
@@ -110,19 +167,16 @@ class GoogleTranslateion:
                 translated_paragraphs.append(paragraph)
 
         # Join the translated paragraphs back together with new lines
-        translated_text = '\n'.join(translated_paragraphs)
-        return translated_text
+        translation = '\n'.join(translated_paragraphs)
+        return translation
             
     def translateFree(self, text, target_lang):
         # Create an instance of the Translator class
         translator = Translator()
-
-        # Translate the text
         translation = translator.translate(text, dest=target_lang)
-
-        # Print the translation
-        print(f'Translated text: {translation.text}')
         return translation.text
     
     def translate(self, text, target_lang):
-        return self.translateCloud(text, target_lang)
+        translation = self.translateCloud(text, target_lang)
+        print(f'Translated text: {translation}')
+        return translation

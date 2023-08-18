@@ -48,6 +48,9 @@ class GoogleSearch:
     def search(self, query, num = 10, itemKey = 'link'):
         return self._search(query, '', num, itemKey)
     
+    def searchVideo(self, query, num = 10):
+        return self._search(query, 'video', num)
+    
     def searchImage(self, query, num = 10):
         return self._search(query, 'image', num)
     

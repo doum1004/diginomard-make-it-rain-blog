@@ -161,6 +161,23 @@ def writeMovieBlogPost(text, keyword):
 
     writeInTranslation(jsonFilePath, 'ko')
 
+def jsonFileToMarkdown(jsonFilePath, keyword):
+    jsonData = Utils.readJsonFile(jsonFilePath)
+    subDir = FileUtils.fixDirectoryName(keyword)
+    
+    jsonData['uuid'] = Utils.shortUUID()
+    jsonData['lang'] = 'en'
+    images = googleSearch.searchImage(f'{keyword}', 10)
+    jsonData['images'] = images
+
+    link = googleSearch.search(f'justwatch {keyword}', 1)
+    jsonData['links'] = link
+
+    jsonFilePath = os.path.join(saveUtils.baseDir, subDir, f"article.json")
+    FileUtils.writeFile(jsonFilePath, jsonData)    
+    writeMarkdown(jsonFilePath)
+
+    writeInTranslation(jsonFilePath, 'ko')
 
 # load text file 'C:\Workspace\Personal\diginomard-make-it-rain-blog\__output\blog\movie\2023-07-29\카메라를 멈추면 안 돼\article copy.json'
 
@@ -176,9 +193,10 @@ def writeMovieBlogPost(text, keyword):
 # if not isValidJson:
 #     input('Invalid Json. Continue ? ')
 
-q = '영화 바비'
+q = '마다가스카의 펭귄 영화'
 text = searchWiki(q)
 writeMovieBlogPost(text, q)
+#jsonFileToMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/chagpt/밀레니엄 여자를 증오한 남자들/230804-165515 copy.json', q)
 
 # txt = "Donnie Brasco is a crime drama film based on the true story of FBI agent Joseph D. Pistone, who infiltrated the Bonanno crime family in New York City during the 1970s. Under the alias Donnie Brasco, Pistone befriends aging mobster Lefty Ruggiero and gains his trust. As Donnie goes deeper into the Mafia, he struggles with his dual identity and the risk of getting his friend killed. The film was released in 1997 and received positive reviews from critics. It was a box office success and was nominated for an Academy Award for Best Adapted Screenplay.\nThe summary provided above appears to be cut off and incomplete.\nDonnie Brasco is a crime film released in 1997. It is based on the true story of undercover FBI agent Joseph D. Pistone, who infiltrates the Mafia. The film was directed by Mike Newell and stars Al Pacino and Johnny Depp in the lead roles. It received positive reviews from critics and was a commercial success, earning over $124 million worldwide.\nThe film \"Donnie Brasco\" received positive reviews from critics. They praised the performances of Al Pacino and Johnny Depp, with Depp's acting being particularly hailed as \"sensational\" and \"believable.\" The screenplay and the portrayal of the teacher-student relationship between the two main characters were also praised. The film was described as a gripping mafia thriller and one of Pacino's best performances. The final scene featuring Pacino was noted for its emotional impact. Overall, critics considered \"Donnie Brasco\" to be a terrific movie."
 # writeMovieBlogPost(txt, q)
@@ -186,7 +204,9 @@ writeMovieBlogPost(text, q)
 #writeMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json')
 #writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json', 'ko')
 
-# *정영진 - 마다가스카의 펭귄 (2014년作/미국/애니메이션/에릭 다넬, 시몬 J.스미스 감독)
+# *최광희 - 달짝지근해: 7510 (2023년作/한국/코미디/이한 감독)
+# *전찬일 – 다섯 번째 흉추 (2023년作/한국/드라마/박세영 감독) 
+# *라이너 - 비닐하우스 (2023년作/한국/범죄/이솔희 감독)
 # *장규성 – 리바운드 (2023년作/한국/드라마/장항준 감독) 
 # *라이너 – 슬픔의 삼각형 (2023년作/스웨덴,미국/코미디/루벤 외스틀룬드 감독) 
 # *거의없다 - 맥베스의 비극 (2022년作/미국/드라마/조엘 코엔 감독)

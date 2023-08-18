@@ -107,6 +107,9 @@ class Utils:
 
     # get unique file name regardless of extension
     def getUniqueFilePath(dir, name, ext, i = 0):
+        if (ext.startswith('.') == False):
+            ext = '.' + ext
+
         # get all files under dir and get file name without extension
         fileNames = []
         if os.path.exists(dir):
@@ -196,6 +199,7 @@ class Utils:
 
 class HTMLUtils:
     #headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",}
+    #headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0'}
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) ' 
       'AppleWebKit/537.11 (KHTML, like Gecko) '
       'Chrome/23.0.1271.64 Safari/537.11',
@@ -386,15 +390,24 @@ class ImageUtils:
         if fileNameWithoutExtension == '':
             fileNameWithoutExtension = os.path.splitext(fileName)[0]
             i = 0
-        ext = fileName.split(".")[-1]
+
+        ext = 'jpg'
+        if fileName.find(".") != -1:
+            ext = fileName.split(".")[-1]
+        
+        if ext == "gif":
+            return ''
 
         filePath = Utils.getUniqueFilePath(dir, fileNameWithoutExtension, "." + ext, i)
         print(filePath)
         FileUtils.createDir(os.path.dirname(filePath))
         try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                urllib.request.urlretrieve(url, filePath)
+            #urllib.request.urlretrieve(url, filePath)
+            request = urllib.request.Request(url, None, HTMLUtils.headers)
+            image = urllib.request.urlopen(request, timeout=15).read()
+            if imghdr.what(None, image):
+                with open(filePath, "wb") as f:
+                    f.write(image)
         except Exception as e:
             print(e)
             pass
@@ -402,6 +415,24 @@ class ImageUtils:
             print('[Error]Failed to download image {}\n'.format(url))
             filePath = ''
         return filePath
+
+    def getImageResolution(image_data):
+        image = Image.open(BytesIO(image_data))
+        return image.size
+    
+    def convertItToWebPFile(sourceFilePath):
+        if not os.path.exists(sourceFilePath):
+            return ''
+        targetFilePath = os.path.splitext(sourceFilePath)[0] + '.webp'
+        if os.path.exists(targetFilePath):
+            return targetFilePath
+        try:
+            image = Image.open(sourceFilePath)
+            image = image.convert('RGB')
+            image.save(targetFilePath, 'webp')
+        except:
+            pass
+        return targetFilePath
 
 class SaveUtils:
     baseDir = ''
@@ -449,8 +480,14 @@ class SaveUtils:
         if url == '':
             return
         
+        path = urllib.parse.urlsplit(url).path
+        filename = posixpath.basename(path).split('?')[0]
+        file_type = filename.split(".")[-1]
+        if file_type.lower() not in ["jpe", "jpeg", "jfif", "exif", "tiff", "gif", "bmp", "png", "webp", "jpg"]:
+            file_type = "jpg"
+
         baseDir = self.getBaseDir(subDir)
-        filePath = Utils.getUniqueFilePath(baseDir, '', 'jpg')
+        filePath = Utils.getUniqueFilePath(baseDir, '', file_type)
 
         try:
             urllib.request.urlretrieve(url, filePath)

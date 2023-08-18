@@ -1,37 +1,50 @@
 import os
+import re
 import time
 import datetime
 
 try:
-    from diginomard_toolkit.google_api import GoogleTranslateion
+    from google_api import GoogleTranslateion
 except ImportError:  # Python 3
-    from .diginomard_toolkit.google_api import GoogleTranslateion
+    from .google_api import GoogleTranslateion
     
 try:
-    from diginomard_toolkit.image_search import ImageSearch
+    from video_search import VideoSearch
 except ImportError:  # Python 3
-    from .diginomard_toolkit.image_search import ImageSearch
-    
-try:
-    from diginomard_toolkit.ai_openai import OpenAI
-except ImportError:  # Python 3
-    from .diginomard_toolkit.ai_openai import OpenAI
-    
-try:
-    from diginomard_toolkit.prompts import PromptGenerator
-except ImportError:  # Python 3
-    from .diginomard_toolkit.prompts import PromptGenerator
-    
-try:
-    from diginomard_toolkit.utils import ImageUtils, SaveUtils, Utils, FileUtils
-except ImportError:  # Python 3
-    from .diginomard_toolkit.utils import ImageUtils, SaveUtils, Utils, FileUtils
+    from .video_search import VideoSearch
 
+try:
+    from image_search import ImageSearch
+except ImportError:  # Python 3
+    from .image_search import ImageSearch
+    
+try:
+    from utils import ImageUtils, SaveUtils, Utils, FileUtils
+except ImportError:  # Python 3
+    from .utils import ImageUtils, SaveUtils, Utils, FileUtils
+
+try:
+    from ai_scale_image import ScaleImage
+except ImportError:  # Python 3
+    from .ai_scale_image import ScaleImage
+
+try:
+    from prompts import PromptGenerator
+except ImportError:  # Python 3
+    from .prompts import PromptGenerator
+
+try:
+    from ai_openai import OpenAI
+except ImportError:  # Python 3
+    from .ai_openai import OpenAI
+     
 class WURG:
     korTimeZone = datetime.timezone(datetime.timedelta(hours=9))
     saveUtils = SaveUtils(f'__output/blog/wurg/{Utils.getCurrentDate()}')
     openai = OpenAI()
     gTranslator = GoogleTranslateion()
+    scaleImage = ScaleImage()
+    videoSearch = VideoSearch()
     def __init__(self):
         pass
 
@@ -41,25 +54,26 @@ class WURG:
 
     def jsonToMarkdown(self, jsonData, production):
         nbMainContentImages = 2 if production else 20
-        def getImages(images, hide = False):
+        def getImages(images, alt):
             if len(images) == 0:
                 return ''
             result = []
             for image in images:
-                alt = 'hide' if hide else ''
                 result.append(f'![{alt}]({image})')
             return '\n'.join(result)
         
-        def getDetail(detail):
+        def getDetail(detail, imageAlt):
             content = detail['content']
-            images = getImages(detail['images'][:nbMainContentImages])
+            images = ''
+            if "images" in detail:
+                images = getImages(detail['images'][:nbMainContentImages], imageAlt)
             return f'{content}\n\n{images}'
         
         def getMain(main):
             result = []
             for item in main:
                 heading = item['heading']
-                detail = getDetail(item['detail'])
+                detail = getDetail(item['detail'], item['tag'])
                 result.append(f'## {heading}\n{detail}')
                 result.append('')
                 result.append('')
@@ -76,14 +90,18 @@ class WURG:
         result.append('---')
         result.append(f'layout: post')
         result.append(f'title: "{jsonData["title"]}"')
+        if 'topic' in jsonData:
+            result.append(f'topic: "{jsonData["topic"]}"')
         if 'description' in jsonData:
             result.append(f'description: "{jsonData["description"]}"')
         if 'tags' in jsonData:
             result.append(f'tags: "{jsonData["tags"]}"')
         result.append(f'date: {date}')
         result.append(f'categories: ')
-        if len(jsonData["intro"]["images"]) > 0:
-            result.append(f'image: {jsonData["intro"]["images"][0]}')
+        mainImage = ''
+        if "images" in jsonData["intro"] and len(jsonData["intro"]["images"]) > 0:
+            mainImage = jsonData["intro"]["images"][0]
+        result.append(f'image: {mainImage}')
         result.append(f'uuid: {jsonData["uuid"]}')
         result.append(f'lang: {lang}')
 
@@ -91,7 +109,8 @@ class WURG:
         result.append('')
         result.append(f'{jsonData["intro"]["content"]}')
         result.append('')
-        result.append(f'{getImages(jsonData["intro"]["images"], True)}')
+        if "images" in jsonData["intro"]:
+            result.append(f'{getImages(jsonData["intro"]["images"], "hide")}')
         result.append('')
         result.append('')
         result.append(f'{getMain(jsonData["main"])}')
@@ -99,7 +118,8 @@ class WURG:
         result.append('')
         result.append(f'{jsonData["conclusion"]["content"]}')
         result.append('')
-        result.append(f'{getImages(jsonData["conclusion"]["images"][:1])}')
+        if "images" in jsonData["conclusion"]:
+            result.append(f'{getImages(jsonData["conclusion"]["images"][:1], jsonData["topic"])}')
         result.append('')
         return '\n'.join(result)
 
@@ -112,69 +132,84 @@ class WURG:
         markdownData = self.jsonToMarkdown(jsonData, production)
         FileUtils.writeFile(markdownFilePath, markdownData)
 
-    def downloadImage(self, imageDir, keywords: list, fileName, nbImages = 5):
+    def getImageLinks(self, keywords: list, nbLinks = 5):
         # remove duplicates of keywords
         keywords = list(dict.fromkeys(keywords))
-        baseDir = os.path.dirname(imageDir)
-
+        print(f'getImages : {keywords}')
         imageSearch = ImageSearch()
         imagePaths = []
         for keyword in keywords:
-            imagePaths.extend(imageSearch.getImageFromBing(f'{keyword}', nbImages))
-        if len(imagePaths) == 0:
-            return []
-        
-        imagePaths = Utils.moveFiles(imagePaths, imageDir, fileName, 1)
-        # replace imagePaths in relative path from baseDir
-        relPaths = []
-        for path in imagePaths:
-            relPath = path.replace(baseDir, '')
-            # replace \\ to /
-            relPath = relPath.replace('\\', '/')
-            if relPath[0] == '/':
-                relPath = relPath[1:]
-            relPaths.append(relPath)        
-        return relPaths
-
-    def getImages(self, imageDir, keywords: list, fileName, nbImages = 5):
-        # remove duplicates of keywords
-        keywords = list(dict.fromkeys(keywords))
-        baseDir = os.path.dirname(imageDir)
-
-        imageSearch = ImageSearch()
-        imagePaths = []
-        for keyword in keywords:
-            imagePaths.extend(imageSearch.getImageFromBingSearch(f'{keyword}', nbImages))
+            imagePaths.extend(imageSearch.getImageFromBingSearch(f'{keyword}', nbLinks))
         return imagePaths
 
-    def fillImages(self, jsonData, baseDir, resetFolder = True):
-        imageDir = os.path.join(baseDir, 'images')
+    def getVideoLinks(self, keywords: list, nbLinks = 5):
+        # remove duplicates of keywords
+        keywords = list(dict.fromkeys(keywords))
+        print(f'getVideos : {keywords}')
+
+        links = []
+        for keyword in keywords:
+            links.extend(self.videoSearch.searchPexels(f'{keyword}', nbLinks))
+        return links
+    
+    def fillResources(self, jsonData, baseDir, resetFolder = True, fillImages = True, fillVideos = True):
         # reset folder if exist
-        if os.path.isdir(imageDir) and resetFolder:
-            Utils.deleteFilesUnderDir(imageDir)
-        
-        topicImages = self.getImages(imageDir, [jsonData['topic']], 10)
-        jsonData['intro']['images'] = topicImages
-        for idx, item in enumerate(jsonData['main']):
-            keywords = [item['heading']]
+        if resetFolder:
+            imagesDir = os.path.join(baseDir, 'images')
+            if os.path.isdir(imagesDir):
+                Utils.deleteFilesUnderDir(imagesDir)
+            videosDir = os.path.join(baseDir, 'videos')
+            if os.path.isdir(videosDir):
+                Utils.deleteFilesUnderDir(videosDir)
+
+        images = []
+        videos = []
+        keywords = [jsonData['topic']]
+        if fillImages:
+            images = self.getImageLinks(keywords, 5)
+        if fillVideos:
+            videos = self.getVideoLinks(keywords, 5)
+        jsonData['intro']['images'] = images
+        jsonData['intro']['videos'] = videos
+
+        for item in jsonData['main']:
+            keywords = [item['heading'], f"{jsonData['topic']} {item['heading']}"]
             if 'tag' in item:
                 keywords.append(item['tag'])
-            images = self.getImages(imageDir, keywords, 5 * len(keywords))
-            item['detail']['images'] = images
-        jsonData['conclusion']['images'] = []
 
+            images = []
+            videos = []
+            if fillImages:
+                images = self.getImageLinks(keywords, 5)
+            if fillVideos:
+                videos = self.getVideoLinks(keywords, 5)
+            item['detail']['images'] = images
+            item['detail']['videos'] = videos
+
+        jsonData['conclusion']['images'] = []
+        jsonData['conclusion']['videos'] = []
+            
     def fillDraftJson(self, jsonData, baseDir):
         FileUtils.createDir(baseDir)
-            
+        
+        # traverse main heading to remove number prefix
+        for item in jsonData['main']:
+            heading = item['heading']
+            pattern = re.compile(r'\d+\.\s+')
+            heading = pattern.sub('', heading)
+            item['heading'] = heading
+
         jsonData['uuid'] = Utils.shortUUID()
         jsonData['lang'] = 'en'
-        self.fillImages(jsonData, baseDir)
+        self.fillResources(jsonData, baseDir, fillImages=False)
 
     def writeWURG(self, keyword):
         keyword = keyword.strip()
+        print(f'WURG Keyword: {keyword}')
 
+        messages = []
         prompts = PromptGenerator.getWURGPrompts(keyword)
-        responseText = self.openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+        responseText = self.openai.chatMessageContents(prompts[0], prompts[1], prompts[2], messages, keyword = keyword)
 
         i1 = responseText.find('{')
         i2 = responseText.rfind('}')
@@ -194,10 +229,13 @@ class WURG:
             prompts = PromptGenerator.getFixJsonPrompts(resultJson)
             resultJson = self.openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
 
+        resultJson['topic'] = keyword
         self.fillDraftJson(resultJson, baseDir)
         jsonFilePath = os.path.join(baseDir, f"{fileName}.json")
         FileUtils.writeFile(jsonFilePath, resultJson)
         self.writeMarkdown(jsonFilePath, False)
+
+        baseDir = self.renameFolderByUUID(baseDir, resultJson)
         return resultJson
 
     def fillSEODescription(self, jsonData):
@@ -211,12 +249,12 @@ class WURG:
         for item in jsonData['main']:
             strData += 'Heading: ' + item['heading']
             
-        prompts = PromptGenerator.getSEODescription(strData)
+        prompts = PromptGenerator.getSEODescription(strData, jsonData['lang'])
         responseText = self.openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
         jsonData['description'] = responseText
         time.sleep(5) # up to 20 api calls per min
 
-        prompts = PromptGenerator.getHashTags(strData)
+        prompts = PromptGenerator.getHashTags(strData, jsonData['lang'])
         responseText = self.openai.chatMessageContents(prompts[0], prompts[1], prompts[2])
         jsonData['tags'] = responseText
         jsonData['description-pass'] = True
@@ -233,18 +271,43 @@ class WURG:
                 # sleep 5 sec
                 time.sleep(10)
 
+    def renameFolderByUUID(self, baseDir, jsonData):
+        # change folder name as uuid in json
+        dirname = os.path.basename(baseDir)
+        newDir = baseDir
+        if dirname != jsonData['uuid']:
+            newDir = os.path.join(os.path.dirname(baseDir), jsonData['uuid'])
+            # try and tach to retry
+            while True:
+                try:
+                    os.rename(baseDir, newDir)
+                    break
+                except:
+                    # Show error and wait for user input
+                    print(f'Error on rename {baseDir} to {newDir}')
+                    input('Press any key to continue')
+        return newDir
+
     # jsonPostProcess: removeImageListItemIfNotExist, change folder name as uuid in json, change json file name ()
     def jsonPostProcess(self, jsonFilePath):
         def imageProcess(dir, filename, images: list):
             # downloadImagesIfUrl, removeImageItemIfNotExistInFile
             imageDir = os.path.join(dir, 'images')
-            for idx, image in enumerate(images):
+            for idx, image in reversed(list(enumerate(images))):
                 if Utils.isUrl(image):
                     downloadedImagePath = ImageUtils.downloadImage(image, imageDir, filename)
                     if downloadedImagePath:
                         images[idx] = FileUtils.getRelPath(dir, downloadedImagePath)
+                    else:
+                        images[idx] = ''
                 elif not os.path.isfile(os.path.join(dir, image)):
+                    images[idx] = ''
+
+                if images[idx] == '':
                     images.pop(idx)
+
+            for image in images:
+                self.scaleImage.scale(os.path.join(dir, image))
 
         def deleteFileIfNotExistInList(dir, images: list):
             imageDir = os.path.join(dir, 'images')
@@ -285,19 +348,7 @@ class WURG:
         self.fillSEODescription(jsonData)
 
         # change folder name as uuid in json
-        dirname = os.path.basename(baseDir)
-        if dirname != jsonData['uuid']:
-            newDir = os.path.join(os.path.dirname(baseDir), jsonData['uuid'])
-            # try and tach to retry
-            while True:
-                try:
-                    os.rename(baseDir, newDir)
-                    break
-                except:
-                    # Show error and wait for user input
-                    print(f'Error on rename {baseDir} to {newDir}')
-                    input('Press any key to continue')
-            baseDir = newDir
+        baseDir = self.renameFolderByUUID(baseDir, jsonData)
 
         # update json file path keep filename
         jsonFilePath = os.path.join(baseDir, os.path.basename(jsonFilePath))
@@ -337,8 +388,17 @@ class WURG:
     def fillNewImages(self, jsonFilePath):
         jsonData = Utils.readJsonFile(jsonFilePath)
         baseDir = os.path.dirname(jsonFilePath)
-        self.fillImages(jsonData, baseDir)
+        self.fillResources(jsonData, baseDir, fillVideos=False)
         FileUtils.writeFile(jsonFilePath, jsonData)
+
+    def copyImages(self, sourceJsonFilePath, targetJsonFilePath):
+        sourceJsonData = Utils.readJsonFile(sourceJsonFilePath)
+        targetJsonData = Utils.readJsonFile(targetJsonFilePath)
+        targetJsonData['intro']['images'] = sourceJsonData['intro']['images']
+        targetJsonData['conclusion']['images'] = sourceJsonData['conclusion']['images']
+        for idx, item in enumerate(targetJsonData['main']):
+            targetJsonData['main'][idx]['detail']['images'] = sourceJsonData['main'][idx]['detail']['images']
+        FileUtils.writeFile(targetJsonFilePath, targetJsonData)
 
     def runTranslation(self, dir, lang):
         for dirname in os.listdir(dir):
@@ -354,15 +414,31 @@ class WURG:
 
     def runMarkdown(self, dir):
         for dirname in os.listdir(dir):
-            dirPath = os.path.join(dir, dirname)
-            if os.path.isdir(dirPath):
-                for filename in os.listdir(dirPath):
-                    if filename.startswith('article') and filename.endswith('.json'):
-                        jsonFilePath = os.path.join(dirPath, filename)
-                        if os.path.isfile(jsonFilePath):
-                            self.writeMarkdown(jsonFilePath, True)
-                        else:
-                            print(f'Not found {jsonFilePath}')
+            if os.path.isdir(os.path.join(dir, dirname)):
+                jsonFilePath = os.path.join(dir, dirname, 'article.json')
+                if os.path.isfile(jsonFilePath):
+                    jsonFilePath = self.jsonPostProcess(jsonFilePath)
+                    self.writeMarkdown(jsonFilePath, True)
+
+                    jsonFilePath_ko = os.path.join(dir, dirname, 'article-ko.json')
+                    if os.path.isfile(jsonFilePath_ko):
+                        self.copyImages(jsonFilePath, jsonFilePath_ko)
+                        jsonFilePath_ko = self.jsonPostProcess(jsonFilePath_ko)
+                        self.writeMarkdown(jsonFilePath_ko, True)
+                else:
+                    print(f'Not found {jsonFilePath}')
+
+        # for dirname in os.listdir(dir):
+        #     dirPath = os.path.join(dir, dirname)
+        #     if os.path.isdir(dirPath):
+        #         for filename in os.listdir(dirPath):
+        #             if filename.startswith('article') and filename.endswith('.json'):
+        #                 jsonFilePath = os.path.join(dirPath, filename)
+        #                 jsonFilePath = self.jsonPostProcess(jsonFilePath)
+        #                 if os.path.isfile(jsonFilePath):
+        #                     self.writeMarkdown(jsonFilePath, True)
+        #                 else:
+        #                     print(f'Not found {jsonFilePath}')
 
 
     def getMainHeadings(self, jsonData):
@@ -375,9 +451,13 @@ class WURG:
         for keyword in keywords:
             result = self.writeWURG(keyword)
             if writeHeadings:
+                # ask user to write headings, start after 5 sec
+                print('Write headings. Continue after 5 sec')
+                time.sleep(5)
+
                 headings = self.getMainHeadings(result)
                 for heading in headings:
-                    self.writeWURG(heading)
+                    self.writeWURG(f'{heading} ({keyword})')
 
     def writeMarkdownUnder(self, dir):
         for dirname in os.listdir(dir):

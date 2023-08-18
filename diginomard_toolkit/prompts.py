@@ -1,5 +1,7 @@
-from diginomard_toolkit.utils import Preference, Utils
-
+try:
+    from utils import Preference, Utils
+except ImportError:  # Python 3
+    from .utils import Preference, Utils
 
 class PromptGenerator:
     def __init__(self):
@@ -7,8 +9,8 @@ class PromptGenerator:
 
     def getWURGPrompts(keyword, number = 5):
         keyword = keyword.strip()
-        systemContent = f"You are an script writer that only speaks Json. Do not write normal text. Write all in one line. Use single quote instead of double quote in key value."
-        userContent = f'Give me a 2 mins long script talking about {number} "{keyword}" that we must know. Must have {number} main. Must fill all values in Json except images. Main Tag should take simplied Main Heading for image search.'
+        systemContent = f"You are an script writer that only writes in Json. Do not write normal text. Write all in one line. Use single quote instead of double quote in key value."
+        userContent = f'Give a detail script talking about {number} "{keyword}" things we must know. Organic conversation flow. Must fill {number} main. Fill each content at least 1 min to cover. Must fill all values in Json. Fill Main Tag for better image or video search.'
         jsonFormat = Utils.readJsonFileAsOneLineText('templates/template_wurg.json')
         assistantContent = f"Use this MyJson format:\n{jsonFormat}"
         return systemContent, userContent, assistantContent
@@ -19,15 +21,19 @@ class PromptGenerator:
         assistantContent = f""
         return systemContent, userContent, assistantContent
     
-    def getSEODescription(data):
+    def getSEODescription(data, lang = 'en'):
         systemContent = f""
+        if lang != 'en':
+            systemContent = f"Translate to {lang}"
         userContent = "Write a blog 120 charaters blog description for search engine optimization. It has to be one line. Don't use special charaters."
         assistantContent = f"{data[:Preference.maxToken]}"
         return systemContent, userContent, assistantContent
 
-    def getHashTags(data):
+    def getHashTags(data, lang = 'en'):
         systemContent = f""
-        userContent = "Give 5 hash tags"
+        if lang != 'en':
+            systemContent = f"Translate to {lang}"
+        userContent = "Give 7 hash tags (Add ',' between each hash tag. Remove '#' from each hash tag.)"
         assistantContent = f"{data[:Preference.maxToken]}"
         return systemContent, userContent, assistantContent
     

@@ -22,6 +22,149 @@
             modal.style.display = 'none';
         }
 
+        function reload() {
+            // Call the backend to delete the image from the server
+            fetch('/reload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: '' // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function en() {
+            fetch('/en', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: '' // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function ko() {
+            fetch('/ko', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: '' // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function pre() {
+            fetch('/pre', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: '' // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function next() {
+            fetch('/next', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: '' // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function save() {
+            if (!confirm('Are you sure you want to save this data?'))
+                return;
+            
+            // Prepare the JSON data to send as the request body
+            requestData = {
+                topic: document.getElementById('topic').value,
+                title: document.getElementById('title').value,
+                uuid: document.getElementById('uuid').value,
+                lang: document.getElementById('lang').value,
+                intro: document.getElementById('intro').value,
+                conclusion: document.getElementById('conclusion').value
+            };
+
+            // iterate main, get heading, tag, detail
+            const mainCount = document.getElementById('main_count').value;
+            for (let i = 0; i < mainCount; i++) {
+                const heading = document.getElementById('heading' + (i + 1)).value;
+                const tag = document.getElementById('tag' + (i + 1)).value;
+                const detail = document.getElementById('detail' + (i + 1)).value;
+                requestData['heading' + (i + 1)] = heading;
+                requestData['tag' + (i + 1)] = tag;
+                requestData['detail' + (i + 1)] = detail;
+            }
+            
+            // Call the backend to delete the image from the server
+            fetch('/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: JSON.stringify(requestData) // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Saved successfully');
+                }
+                else {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function translateData() {
+            if (!confirm('Are you sure you want to translate this data?'))
+                return;
+            fetch('/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' // Set the correct Content-Type header
+                },
+                body: '' // Send the JSON data as the request body
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
         function convertToFormattedJson(jsonStr) {
             try {
                 jsonStr = jsonStr.replace(/'/g, '"')
@@ -49,60 +192,111 @@
 </head>
 <body>
     <h1>Edit JSON Data:</h1>
-        <label for="name">Topic:</label>
-        <textarea id="topic" name="topic" rows="1">{{ json_data['topic'] }}</textarea><br>
+    <p>
+        <button onclick="save()">Save</button>
+        <button onclick="reload()">Reload</button>
+        <button onclick="pre()">Previous</button>
+        <button onclick="next()">Next</button>
+        <button onclick="translateData()">Translate</button>
+        <button onclick="en()">English</button>
+        <button onclick="ko()">Korean</button>
+    </p>
 
-        <label for="name">Title:</label>
-        <textarea id="title" name="title" rows="1">{{ json_data['title'] }}</textarea><br>
+        {% if json_data['topic'] is defined %}
+            <label for="name">Topic:</label>
+            <textarea id="topic" name="topic" rows="1">{{ json_data['topic'] }}</textarea><br>
+        {% endif %}
+        
+        {% if json_data['title'] is defined %}
+            <label for="name">Title:</label>
+            <textarea id="title" name="title" rows="1">{{ json_data['title'] }}</textarea><br>    
+        {% endif %}
 
-        <label for="name">UUID:</label>
-        <textarea id="uuid" name="uuid" rows="1">{{ json_data['uuid'] }}</textarea><br>
+        {% if json_data['uuid'] is defined %}
+            <label for="name">UUID:</label>
+            <textarea id="uuid" name="uuid" rows="1">{{ json_data['uuid'] }}</textarea><br>
+        {% endif %}
 
-        <label for="name">Language:</label>
-        <textarea id="lang" name="lang" rows="1">{{ json_data['lang'] }}</textarea><br>
+        {% if json_data['lang'] is defined %}
+            <label for="name">Language:</label>
+            <textarea id="lang" name="lang" rows="1">{{ json_data['lang'] }}</textarea><br>
+        {% endif %}
 
-        <label for="name">Intro:</label>
-        <textarea id="intro" name="intro" rows="5">{{ json_data['intro']['content'] }}</textarea><br>
-
-        <label for="name">Images:</label>
-        {% set image_list = json_data['intro']['images'] %}
         {% set heading_index = 0 %}
-        {% include 'gallery_template.html' %}
-        <br>
+        {% if json_data['intro'] is defined %}        
+            {% if json_data['intro']['content'] is defined %}
+                <label for="name">Intro:</label>
+                <textarea id="intro" name="intro" rows="5">{{ json_data['intro']['content'] }}</textarea><br>
+            {% endif %}
+            
+            {% if json_data['intro']['images'] is defined %}
+                <label for="name">Images:</label>
+                {% set image_list = json_data['intro']['images'] %}
+                {% include 'image_gallery_template.html' %}
+                <br>
+            {% endif %}
+            
+            {% if json_data['intro']['videos'] is defined %}
+                {% set video_list = json_data['intro']['videos'] %}
+                {% include 'video_gallery_template.html' %}
+            {% endif %}
+        {% endif %}
 
          <!-- Display Main -->
-        {% for main in json_data['main'] %}
-            <label for="name">Heading:</label>
-            <textarea id="heading" name="heading" rows="1">{{ main['heading'] }}</textarea><br>
+         <!-- get len of json_data['main'] -->
+        {% if json_data['main'] is defined %}
+            <input type="hidden" id="main_count" name="main_count" value="{{ json_data['main'] | length }}">
+            
+            {% for main in json_data['main'] %}
+                {% set heading_index = loop.index0 + 1 %}
+                <label for="name">Heading:</label>
+                <textarea id="heading{{ heading_index }}" name="heading{{ heading_index }}" rows="1">{{ main['heading'] }}</textarea><br>
 
-            <label for="name">Tag:</label>
-            <textarea id="tag" name="tag" rows="1">{{ main['tag'] }}</textarea><br>
+                <label for="name">Tag:</label>
+                <textarea id="tag{{ heading_index }}" name="tag{{ heading_index }}" rows="1">{{ main['tag'] }}</textarea><br>
 
-            <label for="name">Detail:</label>
-            <textarea id="detail" name="detail" rows="5">{{ main['detail']['content'] }}</textarea><br>
+                <label for="name">Detail:</label>
+                <textarea id="detail{{ heading_index }}" name="detail{{ heading_index }}" rows="5">{{ main['detail']['content'] }}</textarea><br>
 
-            <label for="name">Images:</label>
-            {% set image_list = main['detail']['images'] %}
-            {% set heading_index = heading_index + 1 %}
-            {% include 'gallery_template.html' %}
-            <br>
-        {% endfor %}
+                <label for="name">Images:</label>
+                
+                {% if main['detail']['images'] is defined %}
+                    {% set image_list = main['detail']['images'] %}
+                    {% include 'image_gallery_template.html' %}
+                {% endif %}
 
-        <label for="name">Conclusion:</label>
-        <textarea id="conclusion" name="conclusion" rows="5">{{ json_data['conclusion']['content'] }}</textarea><br>
+                {% if main['detail']['videos'] is defined %}
+                    {% set video_list = main['detail']['videos'] %}
+                    {% include 'video_gallery_template.html' %}
+                {% endif %}
+                <br>
+            {% endfor %}
+        {% endif %}
 
-        <label for="name">Images:</label>
-        {% set image_list = json_data['conclusion']['images'] %}
-        {% set heading_index = heading_index + 1 %}
-        {% include 'gallery_template.html' %}
 
-        <p>
-            <input type="submit" value="Save">
-        </p>
+        {% if json_data['conclusion'] is defined %}        
+            {% if json_data['conclusion']['content'] is defined %}
+                <label for="name">Conclusion:</label>
+                <textarea id="conclusion" name="conclusion" rows="5">{{ json_data['conclusion']['content'] }}</textarea><br>
+            {% endif %}
 
-        
-    <form method="post">  
-    </form>
+            {% if json_data['main'] is defined %}
+                {% set heading_index = json_data['main'] | length %}
+            {% else %}
+                {% set heading_index = 1 %}
+            {% endif %}
+
+            {% if json_data['intro']['images'] is defined %}
+                <label for="name">Images:</label>
+                {% set image_list = json_data['conclusion']['images'] %}
+                {% include 'image_gallery_template.html' %}
+            {% endif %}
+            
+            {% if json_data['conclusion']['videos'] is defined %}
+                {% set video_list = json_data['conclusion']['videos'] %}
+                {% include 'video_gallery_template.html' %}
+            {% endif %}
+        {% endif %}
 
     <h1>JSON Data:</h1>
     <pre id="json_display" class="json-viewer">{{ json_data | safe }}</pre>

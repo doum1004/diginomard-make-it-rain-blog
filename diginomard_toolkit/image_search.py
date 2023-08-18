@@ -13,9 +13,9 @@ except ImportError:  # Python 3
     from .google_api import GoogleSearch
 
 try:
-    from  utils import FileUtils, Utils, SaveUtils, HTMLUtils
+    from utils import FileUtils, Utils, SaveUtils, HTMLUtils, ImageUtils
 except ImportError:  # Python 3
-    from .utils import FileUtils, Utils, SaveUtils, HTMLUtils
+    from .utils import FileUtils, Utils, SaveUtils, HTMLUtils, ImageUtils
 
 class ImageSearch:
     outputDir = '__output/image/'
@@ -65,6 +65,14 @@ class ImageSearch:
             else:
                 return ""
             
+    def isLinkHasExtBlackList(self, link):        
+        blackList = [".gif", ".cms"]
+        link = link.lower()
+        for ext in blackList:
+            if link.find(ext) != -1:
+                return True
+        return False
+    
     def getImageFromBingSearch(self, q, nbImage):
         page_counter = 0
         adult = 'off'
@@ -84,15 +92,35 @@ class ImageSearch:
                 break
             links = re.findall('murl&quot;:&quot;(.*?)&quot;', html)
             for link in links:
+                if self.isLinkHasExtBlackList(link):
+                    continue
+
                 if link in seen:
                     continue
 
-                response = requests.get(link, headers=HTMLUtils.headers)
-                if response.status_code != 200:
+                try:
+                    # response = requests.get(link, headers=HTMLUtils.headers)
+                    # if response.status_code != 200:
+                    #     Failed = True
+                    request = urllib.request.Request(link, None, HTMLUtils.headers)
+                    image_data = urllib.request.urlopen(request, timeout=20).read()
+                    if imghdr.what(None, image_data):
+                        imgSize = ImageUtils.getImageResolution(image_data)
+                        width = imgSize[0]
+                        height = imgSize[1]
+                        if width >= 400 and height >= 400:
+                            pass
+                        else:
+                            raise ValueError('Invalid image size, not saving {}x{} {}'.format(width, height, link))
+                    else:
+                        raise ValueError('Invalid image, not saving {}'.format(link))
+                except Exception as e:
+                    print("[!] Error:: {}".format(e))
                     continue
                 
+                print("[OK] {}".format(link))
                 results.append(link)
                 seen.add(link)
-                if nbImage == len(results):
-                    break
+                if nbImage == len(seen):
+                    return results
         return results

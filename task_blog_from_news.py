@@ -12,10 +12,13 @@ def translate(text, target = 'ko'):
     result = googleTranslation.translate(text, target)
     return result
 
-def getNewsBlogPost():
-    country = 1
-    googleTrend = GoogleTrend(country)
-    trends = googleTrend.getTrends()
+def getNewsBlogPost(keyword = ''):
+    country = 2
+    if (keyword == ''):
+        googleTrend = GoogleTrend(country)
+        trends = googleTrend.getTrends()
+    else:
+        trends = [keyword]
 
     # input1 = input('Give trend index or keyword : ')
     # # is number or not
@@ -45,14 +48,13 @@ def getNewsBlogPost():
         dir = '__output/blog/news/' + Utils.getCurrentDate()
         saveUtils = SaveUtils(dir)
         subDir = FileUtils.fixDirectoryName(keyword)
-        saveUtils.saveData(subDir, resultEng)
-        path = saveUtils.saveData(subDir, resultKor)
-
-        dir = os.path.dirname(path)
+        saveUtils.saveData(subDir, resultEng, fileName='article-en')
+        path = saveUtils.saveData(subDir, resultKor, fileName='article-ko')
+        pathDir = os.path.dirname(path)
 
         imageSearch = ImageSearch()
         images = imageSearch.getImageFromGoogle(f'{keyword}', 10)
-        Utils.moveFiles(images, dir)
+        Utils.moveFiles(images, pathDir)
 
-getNewsBlogPost()
 #translateFile('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/news/2023-07-26/PSG/230725-135309_0.txt', 'ko')
+getNewsBlogPost('Justin Trudeau')

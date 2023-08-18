@@ -3,25 +3,62 @@ import time
 import openai
 import tiktoken
 import json
-from pathlib import Path
-from .prompts import PromptGenerator
-from .utils import SaveUtils, Utils
+
+try:
+    from prompts import PromptGenerator
+except ImportError:  # Python 3
+    from .prompts import PromptGenerator
+
+try:
+    from utils import SaveUtils, Utils
+except ImportError:  # Python 3
+    from .utils import SaveUtils, Utils
 
 #os.environ['OPENAI_API_KEY']="YOUR_KEY"
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
-class OpenAI:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    saveUtils = SaveUtils('__output/chagpt/')
+class AIModel:
     def __init__(self):
         pass
 
     def getTokenUsage(text):
         return len(tokenizer.encode(text))
+    
+    def _chatMessages(self, messages: list, keyword = ''):
+        pass
+    
+    def chatMessageContents(self, systemConent, userConent, assistantContent = '', messages = [], keyword = ''):
+        keyword = keyword.strip()
+        if systemConent == '' and userConent == '':
+            print('Invalid Prompts')
+            return
+        if systemConent != '':
+            messages.append({
+                    "role": "system",
+                    "content": systemConent
+                })
+        if userConent != '':
+            messages.append({
+                "role": "user",
+                "content": userConent
+            })
+        if assistantContent != '':
+            messages.append({
+                    "role": "assistant",
+                    "content": assistantContent
+                })
+        return self._chatMessages(messages, keyword)
+
+
+class OpenAI(AIModel):
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    saveUtils = SaveUtils('__output/chagpt/')
+    def __init__(self):
+        pass
 
     def _embedding(self, text, model="text-embedding-ada-002"):
         text = text.replace("\n", " ")
-        print(f'ChatGPT openai.Embedding is used (token :{OpenAI.getTokenUsage(text)})')
+        print(f'ChatGPT openai.Embedding is used (token :{AIModel.getTokenUsage(text)})')
         return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
 
     def _chatMessages(self, messages: list, keyword = 'chatgpt'):
@@ -30,7 +67,7 @@ class OpenAI:
 
         print(messages)
         json_str = json.dumps(messages)
-        print(f'ChatGPT openai.ChatCompletion is used (token :{OpenAI.getTokenUsage(json_str)})')
+        print(f'ChatGPT openai.ChatCompletion is used (token :{AIModel.getTokenUsage(json_str)})')
         tryCount = 5
         while tryCount > 0:
             try:
@@ -43,6 +80,7 @@ class OpenAI:
                     # frequency_penalty = 0.0,
                     # presence_penalty = 0.0
                 )
+                print(f'Responsed: {len(response["choices"][0]["message"]["content"])}')
                 break
             except:
                 tryCount -= 1
@@ -90,28 +128,6 @@ class OpenAI:
         answer = '\n'.join(lines[1:])
         prompts = PromptGenerator.getContinuePrompts(answer)
         return openai.chatMessageContents(prompts[0], prompts[1], prompts[2], messages, keyword)
-
-    def chatMessageContents(self, systemConent, userConent, assistantContent = '', messages = [], keyword = ''):
-        keyword = keyword.strip()
-        if systemConent == '' and userConent == '':
-            print('Invalid Prompts')
-            return
-        if systemConent != '':
-            messages.append({
-                    "role": "system",
-                    "content": systemConent
-                })
-        if userConent != '':
-            messages.append({
-                "role": "user",
-                "content": userConent
-            })
-        if assistantContent != '':
-            messages.append({
-                    "role": "assistant",
-                    "content": assistantContent
-                })
-        return self._chatMessages(messages, keyword)
     
     def getSummary(self, text, pauseStep = 10, pauseMaxToken = 0, breakWhenExceed = True):
         split_texts = Utils.splitText(text)

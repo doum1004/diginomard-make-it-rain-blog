@@ -3,7 +3,10 @@ import os
 import yt_dlp
 import requests
 
-from .utils import SaveUtils
+try:
+    from  utils import SaveUtils, Utils
+except ImportError:  # Python 3
+    from .utils import SaveUtils, Utils
 
 class YoutubeLoader:
     saveUtils = SaveUtils('__output/youtube')
@@ -64,7 +67,7 @@ class YoutubeLoader:
 
         return scripts
 
-    def getYoutubeScript(self, url, lang = 'ko'):
+    def getYoutubeScript(self, keyword, url, lang = 'ko'):
         ydl_opts = {'writesubtitles': True, 'skip-download': True}
         output = ''
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -78,11 +81,11 @@ class YoutubeLoader:
             scriptsByFrame = self.getScriptByTimeframe(scriptData)
             output = f'{title} scripts : \r\n\r\n{scriptsByFrame}'
             print(output)
-        self.saveUtils.saveData(title, output)
+        self.saveUtils.saveData(keyword, output, fileName=title)
         return output
         
 
-    def getYoutubeVideoClip(self, fileName, url):
+    def getYoutubeVideoClip(self, keyword, url):
         #   ydl_opts = {
         # 'format': 'bestaudio/best', # choice of quality
         # 'extractaudio' : True,      # only keep the audio
@@ -91,23 +94,23 @@ class YoutubeLoader:
         # 'noplaylist' : True,        # only download single song, not playlist
         #               }
 
-        dir = self.saveUtils.getBaseDir()
-        filePath = self.saveUtils.getUniqueFilePath(dir, fileName, 'mp4')
+        dir = self.saveUtils.getBaseDir(keyword)
+        filePath = Utils.getUniqueFilePath(dir, 'video', 'mp4')
 
         ydl_opts = {
-        'format': 'bestvideo+bestaudio/best', # choice of quality +bestaudio[ext=m4a]/best
+        'format': 'bestvideo/best', # choice of quality +bestaudio[ext=m4a]/best, bestvideo+bestaudio/best
         'outtmpl': f'{filePath}',        # name the file the ID of the video
         'noplaylist' : True,        # only download single song, not playlist
                     }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download(url)
 
-    def downloadYoutube(self, fileName, url, lang):
-        youtubeLoader.getYoutubeScript(fileName, url, lang)
-        #youtubeLoader.getYoutubeVideoClip(fileName, url) # Need to fix for ffmpeg package issue on Window
+    def downloadYoutube(self, keyword, url, lang):
+        youtubeLoader.getYoutubeScript(keyword, url, lang)
+        youtubeLoader.getYoutubeVideoClip(keyword, url) # Need to fix for ffmpeg package issue on Window
 
 youtubeLoader = YoutubeLoader()
-url = input('Get URL : ')
+url = 'https://www.youtube.com/embed/BspouwCTXRo?start=76&end=120 '
 if url == '':
-    url = 'https://www.youtube.com/watch?v=3-hTgRO093Q'
-youtubeLoader.downloadYoutube('YoutubeScript', url, 'en')
+    url = input('Get URL : ')
+youtubeLoader.downloadYoutube('test', url, 'en')

@@ -9,6 +9,19 @@ SpeechRecognition
 opencv-python
 moviepy
 
+# ## Youtube upload
+# google-api-python-client
+# google-auth-httplib2
+# google-auth-oauthlib
+# oauth2client
+
+## Youtube upload - 3rd party
+selenium_youtube
+selenium_chrome
+undetected-chromedriver
+selenium_firefox==0.2.7
+selenium==4.9.1
+
 ## AI
 openai
 hugchat
@@ -38,6 +51,9 @@ windows-curses
 ## test
 pytest
 
-
 # back end
 Flask
+
+#ML
+tensorflow_hub
+matplotlib
