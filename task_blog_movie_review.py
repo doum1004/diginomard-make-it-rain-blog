@@ -193,7 +193,7 @@ def jsonFileToMarkdown(jsonFilePath, keyword):
 # if not isValidJson:
 #     input('Invalid Json. Continue ? ')
 
-q = '마다가스카의 펭귄 영화'
+q = 'movie Walk the Line'
 text = searchWiki(q)
 writeMovieBlogPost(text, q)
 #jsonFileToMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/chagpt/밀레니엄 여자를 증오한 남자들/230804-165515 copy.json', q)
@@ -204,16 +204,13 @@ writeMovieBlogPost(text, q)
 #writeMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json')
 #writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json', 'ko')
 
+# *최광희 - 강변의 무코리타 (2023년作/일본/드라마/오기가미 나오코 감독)
 # *최광희 - 달짝지근해: 7510 (2023년作/한국/코미디/이한 감독)
 # *전찬일 – 다섯 번째 흉추 (2023년作/한국/드라마/박세영 감독) 
 # *라이너 - 비닐하우스 (2023년作/한국/범죄/이솔희 감독)
 # *장규성 – 리바운드 (2023년作/한국/드라마/장항준 감독) 
 # *라이너 – 슬픔의 삼각형 (2023년作/스웨덴,미국/코미디/루벤 외스틀룬드 감독) 
-# *거의없다 - 맥베스의 비극 (2022년作/미국/드라마/조엘 코엔 감독)
-# *최광희 - 더 폴 : 오디어스와 환상의 문 (2008년作/인도,영국,미국/모험/타셈 싱 감독)
 # *전찬일 – 구름에 가린 별 (1960년作/인도/드라마/리트윅 가탁 감독) 
-# *라이너 – 신 고질라 (2016년作/일본/드라마,액션,SF/안노 히데아키, 히구치 신지 감독) 
-# *거의없다 - 앙코르(Walk the Line) (2005년作/미국/로맨스,멜로,드라마/제임스 맨골드 감독)
 # *최광희 - 미스 리틀 선샤인 (2006년作/미국/코미디,드라마/조나단 데이톤, 발레리 페리스 감독)
 # *전찬일 – 리턴 투 서울 (2023년作/프랑스/드라마/데이비 추 감독) 
 # *라이너 – 원더 (2017년作/미국/드라마/스티븐 크보스키 감독) 
