@@ -30,6 +30,14 @@ def jsonToMarkdown(jsonData):
             result.append(f'![{alt}]({image})')
         return '\n'.join(result)
     
+    def getLinks(links):
+        if len(links) == 0:
+            return ''
+        result = []
+        for link in links:
+            result.append(f'[{link}]({link})')
+        return '\n'.join(result)
+    
     lang = 'en'
     if 'lang' in jsonData:
         lang = jsonData['lang']
@@ -66,6 +74,7 @@ def jsonToMarkdown(jsonData):
         result.append('')
 
     result.append(getImages(jsonData["images"], jsonData["topic"]))
+    result.append(getLinks(jsonData["links"]))
 
     return '\n'.join(result)
 
@@ -193,7 +202,7 @@ def jsonFileToMarkdown(jsonFilePath, keyword):
 # if not isValidJson:
 #     input('Invalid Json. Continue ? ')
 
-q = 'movie Walk the Line'
+q = 'The Outfit movie 2022'
 text = searchWiki(q)
 writeMovieBlogPost(text, q)
 #jsonFileToMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/chagpt/밀레니엄 여자를 증오한 남자들/230804-165515 copy.json', q)
@@ -204,6 +213,8 @@ writeMovieBlogPost(text, q)
 #writeMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json')
 #writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-07-29/return to dust (film)/article.json', 'ko')
 
+# *전찬일 - 너의 순간 (2023년作/한국/로맨스/이상준 감독)
+# *최광희 - 소름 (2001년作/한국/공포/윤종찬 감독)
 # *최광희 - 강변의 무코리타 (2023년作/일본/드라마/오기가미 나오코 감독)
 # *최광희 - 달짝지근해: 7510 (2023년作/한국/코미디/이한 감독)
 # *전찬일 – 다섯 번째 흉추 (2023년作/한국/드라마/박세영 감독) 
