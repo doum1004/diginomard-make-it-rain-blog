@@ -15,7 +15,7 @@ wurg = WURG()
 
 #wurg.writeAllWURGUnderDir('__output/blog/wurg/previous')
 
-keywords = ['live stable marriage']
+keywords = ['Saving Money', 'speaking better', 'stable marriage', 'how to survive in desert island']
 wurg.writeWURGs(keywords)
 
 #WURG().runTranslation('__output/blog/wurg_prepare', 'ko')

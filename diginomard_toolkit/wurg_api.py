@@ -201,7 +201,7 @@ class WURG:
 
         jsonData['uuid'] = Utils.shortUUID()
         jsonData['lang'] = 'en'
-        self.fillResources(jsonData, baseDir, fillImages=False)
+        self.fillResources(jsonData, baseDir, fillVideos=False)
 
     def writeWURG(self, keyword):
         keyword = keyword.strip()
@@ -223,11 +223,18 @@ class WURG:
         subDir = FileUtils.fixDirectoryName(keyword)
         baseDir = os.path.join(self.saveUtils.baseDir, subDir)
 
-        if not isValidJson:    
+        tryCount = 0
+        while not isValidJson:
+            tryCount += 1
+            if tryCount > 3 and input('Invalid Json. Do you want to fix it? (y/n)') != 'y':
+                raise Exception('Invalid Json')
             FileUtils.writeFile(os.path.join(baseDir, f"{fileName}_invalid.json"), resultJson)
             print('-- Fix Json --')        
             prompts = PromptGenerator.getFixJsonPrompts(resultJson)
             resultJson = self.openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
+            if Utils.isJsonString(resultJson):
+                resultJson = Utils.loadJson(resultJson)
+            isValidJson = type(resultJson) == dict
 
         resultJson['topic'] = keyword
         self.fillDraftJson(resultJson, baseDir)
