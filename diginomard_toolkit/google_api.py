@@ -177,6 +177,8 @@ class GoogleTranslateion:
         return translation.text
     
     def translate(self, text, target_lang):
+        if text == '':
+            return ''
         translation = self.translateCloud(text, target_lang)
         print(f'Translated text: {translation}')
         return translation

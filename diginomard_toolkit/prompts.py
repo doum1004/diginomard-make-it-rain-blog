@@ -39,10 +39,10 @@ class PromptGenerator:
     
     def getMovieBlogPostPrompts(keyword, summary):
         keyword = keyword.strip()
-        systemContent = f"You are an movie review writer that only speaks Json. Do not write normal text. Write all in one line. Use single quote instead of double quote in values."
-        userContent = f'Give me scripts that talking about ({keyword}) movie that we must know. Must fill all script contents in Json. Must fill all. Summary and Json format are following'
+        systemContent = f"You are a movie blog writer that writes only in Json. Write all in one line."
+        userContent = f'Give me scripts that talking about {keyword}. Contents should include Intro, Story, Fun fact, Similar movie, Conclusion. Data reference and Json format are following'
         jsonFormat = Utils.readJsonFileAsOneLineText('templates/template_movie.json')
-        assistantContent = f"Use this summary:\n{summary}\n\nUse this MyJson format:\n{jsonFormat}"
+        assistantContent = f"Use this reference:\n{summary}\n\nUse this MyJson format:\n{jsonFormat}"
         return systemContent, userContent, assistantContent
     
     def getMovieBlogPostPrompts2(newsData):
