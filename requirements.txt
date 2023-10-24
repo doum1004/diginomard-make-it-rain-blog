@@ -34,7 +34,7 @@ tiktoken
 pytrends
 google-api-python-client
 google-cloud-translate
-google-cloud-storage
+
 ## news
 feedparser
 ## files
