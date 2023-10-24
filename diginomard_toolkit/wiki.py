@@ -26,18 +26,24 @@ class Wiki:
         
         return self.getWiki(title)
 
+    def printPage(self, page_py):
+        print(f"Page - Exists ({page_py.language}): {page_py.exists()}")
+        print("Page - Title: %s" % page_py.title)
+        print("Page - Summary: %s" % page_py.summary[:200])
+
     def getWikiPage(self, keyword):
         for i, lang in enumerate(self.CODE_LANGS):
             self.updateWikiLang(i)
             page_py = self.wiki.page(keyword)
-            print(f"Page - Exists ({lang}): {page_py.exists()}")
             if page_py.exists():
                 break
+            
+        if page_py.exists():
+            self.printPage(page_py)
 
         return page_py
 
-
-    def getWiki(self, keyword):
+    def getWiki(self, keyword, lang = 'en'):
         if keyword is None or keyword == "":
             return
         
@@ -45,14 +51,11 @@ class Wiki:
         if not page_py.exists():
             return
         
-        if 'en' in page_py.langlinks:
-            page_py_en = page_py.langlinks['en']
-            print("Page (en) - Exists: %s" % page_py.exists())
-            if not page_py_en.exists():
-                return
-            page_py = page_py_en
-        
-        print("Page - Title: %s" % page_py.title)
-        print("Page - Summary: %s" % page_py.summary[:200])
+        if page_py.language != lang and lang in page_py.langlinks:
+            page_py_anotherlang = page_py.langlinks[lang]            
+            if page_py_anotherlang.exists():
+                page_py = page_py_anotherlang
+                self.printPage(page_py)
+
         self.saveUtils.saveData(keyword, page_py.text)
         return page_py.text

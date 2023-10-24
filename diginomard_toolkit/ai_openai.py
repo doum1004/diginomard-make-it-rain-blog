@@ -136,7 +136,7 @@ class OpenAI(AIModel):
             pause = pauseStep != -1 and i % pauseStep == pauseStep - 1
             pause |= pauseMaxToken != 0 and len(summary) > pauseMaxToken
             if pause:
-                if not breakWhenExceed or input('Too much token spend. To continue type any and press enter : ') == '':
+                if breakWhenExceed or input('Too much token spend. To continue type any and press enter : ') == '':
                     break
             prompts = PromptGenerator.getSummaryPrompts(text)
             result = self.chatMessageContents(prompts[0], prompts[1], prompts[2], [], keyword='Summary')
