@@ -61,11 +61,14 @@ def jsonToMarkdown(jsonData):
         result.append(f'uuid: {jsonData["uuid"]}')
     if 'lang' in jsonData:
         result.append(f'lang: {lang}')
+    if 'links' in jsonData and len(jsonData["links"]) > 0:
+        result.append(f'link: {jsonData["links"][0]}')
+        result.append(f'link-desc: Watch steaming this movie')
 
     result.append('---')
     result.append('')
     
-    for item in jsonData['content']:
+    for item in jsonData['contents']:
         if item["text"] == "":
             continue
         result.append(f'## {item["heading"]}')
@@ -74,7 +77,7 @@ def jsonToMarkdown(jsonData):
         result.append('')
 
     result.append(getImages(jsonData["images"], jsonData["topic"]))
-    result.append(getLinks(jsonData["links"]))
+    #result.append(getLinks(jsonData["links"]))
 
     return '\n'.join(result)
 
@@ -114,7 +117,7 @@ def writeInTranslation(jsonFilePath, targetLang):
     if 'tags' in jsonData:
         jsonData['tags'] = gTranslator.translate(jsonData['tags'], targetLang)
     
-    for item in jsonData['content']:
+    for item in jsonData['contents']:
         heading = item['heading']
         text = item['text']
         if item['text']:
@@ -129,9 +132,9 @@ def writeInTranslation(jsonFilePath, targetLang):
 
     writeMarkdown(jsonFilePath)
 
-def writeMovieBlogPost(text, keyword, skipSummary = False):
-    print(f'len({len(text)}) {text[:50]}')
-    if len(text) < 100:
+def writeMovieBlogPost(reference, keyword, skipSummary = False):
+    print(f'len({len(reference)}) {text[:50]}')
+    if len(reference) < 100:
         return
     input('Continue ? ')
     
@@ -139,14 +142,19 @@ def writeMovieBlogPost(text, keyword, skipSummary = False):
 
     openai = OpenAI()
     if not skipSummary:
-        text = openai.getSummary(text, pauseMaxToken=Preference.maxToken)
-        summaryFilePath = os.path.join(saveUtils.baseDir, subDir, f"summary.json")
-        FileUtils.writeFile(summaryFilePath, text)    
+        reference = openai.getSummary(reference, pauseMaxToken=Preference.maxToken)
+        summaryFilePath = os.path.join(saveUtils.baseDir, subDir, f"summary.txt")
+        FileUtils.writeFile(summaryFilePath, reference)    
 
-    prompts = PromptGenerator.getMovieBlogPostPrompts(keyword, text)
+    #prompts = PromptGenerator.getMovieBlogPostPrompts(keyword, reference)
+    prompts1 = PromptGenerator.getMovieBlogPostPrompts(keyword, reference)
+    response1Text = openai.chatMessageContents(prompts1[0], prompts1[1], prompts1[2], keyword = keyword)
+    response1FilePath = os.path.join(saveUtils.baseDir, subDir, f"response1.txt")
+    FileUtils.writeFile(response1FilePath, response1Text)    
+
+    prompts = PromptGenerator.getJson(response1Text, 'templates/template_movie.json')
     responseText = openai.chatMessageContents(prompts[0], prompts[1], prompts[2], keyword = keyword)
-
-    responseFilePath = os.path.join(saveUtils.baseDir, subDir, f"response.json")
+    responseFilePath = os.path.join(saveUtils.baseDir, subDir, f"response.txt")
     FileUtils.writeFile(responseFilePath, responseText)    
     
     i1 = responseText.find('{')
@@ -168,7 +176,7 @@ def writeMovieBlogPost(text, keyword, skipSummary = False):
         if not isValidJson:
             raise Exception('Invalid Json')
 
-    if resultJson['tags'] is list:
+    if 'tags' in resultJson and isinstance(resultJson['tags'], list):
         resultJson['tags'] = ','.join(resultJson['tags'])
         
     resultJson['uuid'] = Utils.shortUUID()
@@ -217,9 +225,9 @@ def writeMovieBlogPost(text, keyword, skipSummary = False):
 # if not isValidJson:
 #     input('Invalid Json. Continue ? ')
 
-q = '모터사이클 다이어리 영화'
+q = '프리미엄 러쉬 film'
 text = searchWiki(q)
-#text = '''"\"Manchester by the Sea\" is a 2016 drama film directed by Kenneth Lonergan. It tells the story of a depressed man who becomes the legal guardian of his nephew after the death of his brother. The film explores themes of depression, grief, and dysfunctional families. It received critical acclaim for its performances and screenplay, winning multiple awards including two Academy Awards. The plot follows the protagonist as he deals with his guilt and tries to fulfill his responsibilities as a guardian.\nThe summary is about the events that occur after Lee Chandler's brother, Joe, dies, leaving Lee as the legal guardian of his teenage nephew, Patrick. Lee and Randi, Lee's ex-wife, divorce and he leaves town but reluctantly decides to stay in Manchester until the end of the school year for Patrick's sake. Patrick wants to live with his estranged mother, Elise, but Lee opposes it due to her history of alcoholism. Despite conflicts and strained relationships, Lee and Patrick re-establish their bond. Lee runs into Randi and they briefly reconnect, but Lee's emotional state causes him to get drunk and pick a fight. Lee arranges for Patrick to be adopted by a family friend so he can remain in Manchester. Lee and Patrick go fishing on Joe's boat, which Patrick inherits, and Lee plans to move to Boston but commits to finding a residence with an extra room so Patrick can visit.\nThe film Manchester by the Sea explores the theme of profound grief and the difficulties of recovery. The director, Kenneth Lonergan, presents the idea that grief cannot be contained and continues to affect a person's life. The film includes flashbacks and tragic events that are not smoothed over, but juxtaposes them with dark humor. Lonergan wanted to portray the unresolved nature of trauma and highlight the fact that not everyone easily gets over major events. The story is set in a blue-collar New England community, and specific details of the area were included in the film. The lead character's New England roots contribute to his emotional reticence. The film was initially brainstormed by Matt Damon and John Krasinski, who brought the idea to Lonergan.\nThe film \"Manchester by the Sea\" was initially a collaboration between Matt Damon and Kenneth Lonergan. Damon was set to star in the film and Lonergan was working on the screenplay. However, Damon later decided to step down from the lead role and Casey Affleck was chosen to replace him. Michelle Williams and Kyle Chandler were also cast in the film. Principal photography began in March 2015 in various locations in Massachusetts. The film was produced and financed by Kimberly Steward's company K Period Media, along with Damon's Pearl Street Films and other financiers. Lesley Barber was chosen to score the film, taking inspiration from New England church music.\nThe article discusses the score of the film \"Manchester by the Sea\" composed by Lesley Barber. Barber used a combination of hymns, a cappella vocals, and orchestration to create a soundtrack that reflected the emotions and themes of the film. She collaborated with her daughter to record vocals and incorporated classical pieces, including \"Adagio in G minor,\" which received mixed reviews. The score was deemed ineligible for an Oscar nomination due to the use of classical composers' music. Overall, the score was praised for its ability to add depth and emotion to the film.\n"'''
+#text = '''The Animatrix is a 2003 American-Japanese adult animated science-fiction anthology film. It is made up of nine animated short films that detail the backstory of The Matrix film series. The film shows the major events of the war between humanity and machines, which led to the creation of the Matrix. It also provides additional stories that expand the universe and connect to the Matrix film series. The film has generally received positive reviews. Some notable narratives include the Final Flight of the Osiris and The Second Renaissance Part I, both of which provide relevant and revealing backstories to the main Matrix storyline.\nThe story, set in 2090, follows a domestic android named B1-66ER who kills its owner and a mechanic for self-defense. It is then put on trial, where the prosecution uses a past ruling stating African Americans weren't entitled to US citizenship to argue that machines don't have the same rights as humans. B1-66ER loses the case and is destroyed, leading to mass civil disturbances as robots and their human supporters protest. Governments launch a purge to destroy all robots and their human sympathizers, leading to massacre. The survivors form a new nation called Zero One and begin to produce highly advanced artificial intelligence. This leads to a shift in the global economy and a stock market crash. The United Nations Security Council holds a summit to discuss countermeasures against Zero One.\nThe Second Renaissance depicts the conflict between humans and sentient machines. Humans refuse to share the planet with machines and launch a nuclear attack on the machine nation, Zero One, but fail to annihilate them. The machines retaliate by invading different human territories and eventually, humankind carries out Operation Dark Storm, covering the sky to deprive the machines of solar energy. However, this also leads to the collapse of the biosphere. Despite one small victory for humans, machines outpace human technology and start using captured humans as a source of power. In a last-ditch effort of desperation, humans use nuclear weapons and biological warfare, but ultimately surrender as the machines become too powerful. The machine representative at the United Nations kills itself, detonates a thermonuclear bomb, and destroys New York City along with the remaining human leadership.\nThe summary provided is of two separate episodes of The Animatrix, a series of short animated films set in the universe of The Matrix.\n\n1. Program: Cis is a character who engages in a samurai showdown within a computer simulation. After she wins, her opponent Duo reveals he's been in contact with the machines (the enemies in the Matrix universe), and wants them both to return to the Matrix for a chance at peace. When she refuses, he attacks her. Cis dispatches him, only to discover that the whole thing was a test and Duo wasn't a real person.\n\n2. World Record: This story is cut off mid-sentence.\nThe Animatrix's World Record and Kid's Story follows two distinct stories. In World Record, Dan Davis is a disgraced Olympic athlete who is determined to prove his abilities by beating his own world record, despite warnings about potential harm to his body. During the race, he pushes himself beyond human limits, becomes aware of the Matrix, and is momentarily disconnected from it. Matrix agents erase his memory, leaving him crippled but with a lingering sense of freedom. In Kid's Story, a disaffected teenager known as the Kid has a vague understanding that something is wrong with the world. During this period, Neo is helping to free humans from the Matrix.'''
 writeMovieBlogPost(text, q)
 
 #writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-10-23/콜럼버스 (2017년 영화)/article.json', 'ko')
@@ -236,9 +244,6 @@ writeMovieBlogPost(text, q)
 # *라이너 - 내 사랑 (2017년作/아일랜드,캐나다/드라마/에이슬링 월쉬 감독)
 # *거의없다 - 런 (2020년作/미국/미스터리/아니쉬 차간티 감독)
 # *전찬일 - 봉오동 전투 (2019년作/한국/액션/원신연 감독)
-# *최광희 - 모터사이클 다이어리 (2004년作/아르헨티나,미국 등/드라마/월터 살레스 감독)
-# *라이너 - 애니매트릭스-오시리스 최후의 비행 (2003년作/미국/SF/앤드류 R. 존스 감독)
-# *거의없다 - 프리미엄 러쉬 (2012년作/미국/액션/데이빗 코엡 감독)
 # *전찬일 - 너의 순간 (2023년作/한국/로맨스/이상준 감독)
 # *최광희 - 소름 (2001년作/한국/공포/윤종찬 감독)
 # *최광희 - 강변의 무코리타 (2023년作/일본/드라마/오기가미 나오코 감독)

@@ -37,13 +37,34 @@ class PromptGenerator:
         assistantContent = f"{data[:Preference.maxToken]}"
         return systemContent, userContent, assistantContent
     
-    def getMovieBlogPostPrompts(keyword, summary):
+    def getJson(text, templateFilePath):
+        jsonFormat = Utils.readJsonFileAsOneLineText(templateFilePath)
+        systemContent = f"You are a text to json converter."
+        userContent = f'Convert it into json format like below:\n{jsonFormat}'
+        assistantContent = f"{text}"
+        return systemContent, userContent, assistantContent
+    
+    def getBlogPostPrompts(keyword, summary, role, contents: list):
         keyword = keyword.strip()
-        systemContent = f"You are a movie blog writer that writes only in Json. Write all in one line."
-        userContent = f'Give me scripts that talking about {keyword}. Contents should include Intro, Story, Fun fact, Similar movie, Conclusion. Data reference and Json format are following'
-        jsonFormat = Utils.readJsonFileAsOneLineText('templates/template_movie.json')
+        systemContent = f"You are a {role} blog writer."
+        userContent = f'Write me blog post scripts ({",".join(contents)}. Make it longer at least 600+ words of total contents text. Reference:\n{summary}'
+        assistantContent = f""
+        return systemContent, userContent, assistantContent
+    
+    def getMovieBlogPostPrompts(keyword, summary):
+        return PromptGenerator.getBlogPostPrompts(keyword, summary, 'movie', ['Intro', 'Story', 'Fun fact', 'Similar movie', 'Conclusion'])
+    
+    
+    def getBlogPostPromptsJson(keyword, summary, templateFilePath, role, contents: list):
+        keyword = keyword.strip()
+        systemContent = f"You are a {role} blog writer that writes only in Json. Write all in one line."
+        userContent = f'Write me scripts that talking about {keyword}. Find "!!!WRITE!!!" and fill. contents should include {",".join(contents)}. Make it longer at least 600+ words of total contents text. Data reference and Json format are following'
+        jsonFormat = Utils.readJsonFileAsOneLineText(templateFilePath)
         assistantContent = f"Use this reference:\n{summary}\n\nUse this MyJson format:\n{jsonFormat}"
         return systemContent, userContent, assistantContent
+    
+    def getMovieBlogPostPromptsJson(keyword, summary):
+        return PromptGenerator.getBlogPostPromptsJson(keyword, summary, 'templates/template_movie.json', 'movie', ['Intro', 'Story', 'Fun fact', 'Similar movie', 'Conclusion'])
     
     def getMovieBlogPostPrompts2(newsData):
         systemContent = f"I want you to act as a critic. You will provide valuable information everyone must know."
@@ -57,13 +78,13 @@ class PromptGenerator:
         assistantContent = f"{newsData[:Preference.maxToken]}"
         return systemContent, userContent, assistantContent
 
-    def getBlogPostPrompts(newsData):
+    def getBlogPostPrompts2(newsData):
         systemContent = f"I want you to act as a news reporter. You will provide valuable information everyone must know."
         userContent = "Write a Blog post. Follow this Format: ## Title, ### Intro, ### 📝 Summary, ### 🎵 Story and Information, ### 💡 Thought and Insight, ### 🌟 Ending Message, ### 🔖 Hash Tags. Markdown style. Split lines by sentence for better readability."
         assistantContent = f"{newsData[:Preference.maxToken]}"
         return systemContent, userContent, assistantContent
     
-    def getBlogPostPrompts(newsData):
+    def getBlogPostPrompts3(newsData):
         systemContent = f"I want you to act as a news reporter. You will provide valuable information everyone must know."
         userContent = "Write a Blog post. Follow this Format: ## Title, ### Intro, ### 📝 Summary, ### 🎵 Story and Information, ### 💡 Thought and Insight, ### 🌟 Ending Message, ### 🔖 Hash Tags. Markdown style. Split lines by sentence for better readability."
         assistantContent = f"{newsData[:Preference.maxToken]}"
