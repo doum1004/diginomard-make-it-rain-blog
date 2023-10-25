@@ -72,7 +72,7 @@ class OpenAI(AIModel):
         while tryCount > 0:
             try:
                 response = openai.ChatCompletion.create (
-                    model= "gpt-4", #gpt-3.5-turbo, #gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
+                    model= "gpt-3.5-turbo", #gpt-4, gpt-3.5-turbo, gpt-3.5-turbo-instruct #gpt-3.5-turbo-16k
                     messages = messages,
                     # temperature = 1,
                     # top_p = 0.95,
