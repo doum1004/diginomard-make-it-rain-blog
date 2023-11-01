@@ -140,7 +140,7 @@ class GoogleVoiceService:
 
 class GoogleTranslateion:
     # https://cloud.google.com/translate/docs/languages
-    api_key = 'api-project-427856712714' #os.getenv("GOOGLE_API_KEY")
+    project_id = os.getenv("GOOGLE_PROJECT_ID")
     translate_client = translate.TranslationServiceClient()
     def __init__(self):
         pass
@@ -155,7 +155,7 @@ class GoogleTranslateion:
             if paragraph != '':
                 # Translates the paragraph
                 response = self.translate_client.translate_text(
-                    parent=f"projects/{self.api_key}/locations/global",
+                    parent=f"projects/{self.project_id}/locations/global",
                     contents=[paragraph],
                     target_language_code=target_lang,
                 )

@@ -225,12 +225,12 @@ def writeMovieBlogPost(reference, keyword, skipSummary = False):
 # if not isValidJson:
 #     input('Invalid Json. Continue ? ')
 
-q = '원더 영화'
-text = searchWiki(q)
+#q = '400번의 구타 영화'
+#text = searchWiki(q)
 #text = '''The Animatrix is a 2003 American-Japanese adult animated science-fiction anthology film. It is made up of nine animated short films that detail the backstory of The Matrix film series. The film shows the major events of the war between humanity and machines, which led to the creation of the Matrix. It also provides additional stories that expand the universe and connect to the Matrix film series. The film has generally received positive reviews. Some notable narratives include the Final Flight of the Osiris and The Second Renaissance Part I, both of which provide relevant and revealing backstories to the main Matrix storyline.\nThe story, set in 2090, follows a domestic android named B1-66ER who kills its owner and a mechanic for self-defense. It is then put on trial, where the prosecution uses a past ruling stating African Americans weren't entitled to US citizenship to argue that machines don't have the same rights as humans. B1-66ER loses the case and is destroyed, leading to mass civil disturbances as robots and their human supporters protest. Governments launch a purge to destroy all robots and their human sympathizers, leading to massacre. The survivors form a new nation called Zero One and begin to produce highly advanced artificial intelligence. This leads to a shift in the global economy and a stock market crash. The United Nations Security Council holds a summit to discuss countermeasures against Zero One.\nThe Second Renaissance depicts the conflict between humans and sentient machines. Humans refuse to share the planet with machines and launch a nuclear attack on the machine nation, Zero One, but fail to annihilate them. The machines retaliate by invading different human territories and eventually, humankind carries out Operation Dark Storm, covering the sky to deprive the machines of solar energy. However, this also leads to the collapse of the biosphere. Despite one small victory for humans, machines outpace human technology and start using captured humans as a source of power. In a last-ditch effort of desperation, humans use nuclear weapons and biological warfare, but ultimately surrender as the machines become too powerful. The machine representative at the United Nations kills itself, detonates a thermonuclear bomb, and destroys New York City along with the remaining human leadership.\nThe summary provided is of two separate episodes of The Animatrix, a series of short animated films set in the universe of The Matrix.\n\n1. Program: Cis is a character who engages in a samurai showdown within a computer simulation. After she wins, her opponent Duo reveals he's been in contact with the machines (the enemies in the Matrix universe), and wants them both to return to the Matrix for a chance at peace. When she refuses, he attacks her. Cis dispatches him, only to discover that the whole thing was a test and Duo wasn't a real person.\n\n2. World Record: This story is cut off mid-sentence.\nThe Animatrix's World Record and Kid's Story follows two distinct stories. In World Record, Dan Davis is a disgraced Olympic athlete who is determined to prove his abilities by beating his own world record, despite warnings about potential harm to his body. During the race, he pushes himself beyond human limits, becomes aware of the Matrix, and is momentarily disconnected from it. Matrix agents erase his memory, leaving him crippled but with a lingering sense of freedom. In Kid's Story, a disaffected teenager known as the Kid has a vague understanding that something is wrong with the world. During this period, Neo is helping to free humans from the Matrix.'''
-writeMovieBlogPost(text, q)
+#writeMovieBlogPost(text, q)
 
-#writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-10-23/콜럼버스 (2017년 영화)/article.json', 'ko')
+writeInTranslation('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/blog/movie/2023-11-02/400번의 구타 영화/article.json', 'ko')
 #jsonFileToMarkdown('C:/Workspace/Personal/diginomard-make-it-rain-blog/__output/chagpt/밀레니엄 여자를 증오한 남자들/230804-165515 copy.json', q)
 
 # *최광희 : 치히로 상 (2023년 2월 넷플릭스 공개/일본/드라마/'이마이즈미 리키야' 감독)
@@ -255,7 +255,6 @@ writeMovieBlogPost(text, q)
 # *전찬일 – 구름에 가린 별 (1960년作/인도/드라마/리트윅 가탁 감독) 
 # *최광희 - 미스 리틀 선샤인 (2006년作/미국/코미디,드라마/조나단 데이톤, 발레리 페리스 감독)
 # *전찬일 – 리턴 투 서울 (2023년作/프랑스/드라마/데이비 추 감독) 
-# *라이너 – 원더 (2017년作/미국/드라마/스티븐 크보스키 감독) 
 # *거의없다 - 캐리 (2013년作/미국/공포/킴벌리 피어스 감독)
 # *최광희 - 400번의 구타 (2016년作/프랑스/범죄,드라마/프랑수아 트뤼포 감독)
 # *전찬일 – 스트레이트 스토리 (1999년作/프랑스,미국,영국/드라마/데이비드 린치 감독) 
