@@ -1,5 +1,14 @@
+import random
 import time
 import pyautogui
+
+def move_mouse():
+    # move mouse little around
+    #rand x, y
+    rangeVal = 3
+    x = random.randint(-rangeVal, rangeVal)
+    y = random.randint(-rangeVal, rangeVal)
+    pyautogui.moveRel(x, y)
 
 def click_mouse():
     pyautogui.click()
@@ -10,6 +19,7 @@ def click_mouse_sec(pauseSec=60):
         i = 0
         while True:
             click_mouse()
+            #move_mouse()
             print("Mouse clicked! " + str(i) + " times.")
             i += 1                  
             time.sleep(pauseSec)  # Sleep for 1 minute
