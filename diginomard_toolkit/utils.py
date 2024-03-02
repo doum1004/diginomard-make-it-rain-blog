@@ -508,4 +508,13 @@ class SaveUtils:
         cv2.imwrite(filePath, image)
 
         return filePath
-    
+
+    def downloadURL(self, subDir, url):
+        baseDir = self.getBaseDir(subDir)
+        fileNameWithExt = url.split('/')[-1]
+        name, ext = os.path.splitext(fileNameWithExt)
+        filePath = Utils.getUniqueFilePath(baseDir, name, ext)
+
+        r = requests.get(url, allow_redirects=True)
+        open(filePath, 'wb').write(r.content)
+        return filePath
